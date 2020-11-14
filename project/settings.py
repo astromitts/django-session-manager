@@ -121,3 +121,5 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 LOGIN_SUCCESS_REDIRECT = 'session_manager_index'
+
+HOST = '127.0.0.1:8000'

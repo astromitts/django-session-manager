@@ -1,9 +1,17 @@
 from datetime import datetime, timedelta
+import pytz
 
 
 def twentyfourhoursfromnow():
-    return datetime.now() + timedelta(1)
+    utc=pytz.UTC
+    return utc.localize(datetime.now()) + timedelta(1)
 
 
 def oneweekfromnow():
-    return datetime.now() + timedelta(7)
+    utc=pytz.UTC
+    return utc.localize(datetime.now()) + timedelta(7)
+
+def yesterday():
+    utc=pytz.UTC
+    return utc.localize(datetime.now()) + timedelta(-1)
+
