@@ -5,4 +5,13 @@
 	<li><b>Email:</b> {{request.user.email}})!</li>
 </ul>
 
+<div><a href="{% url 'session_manager_profile_reset_password' %}">Reset password</a></div>
 <div><a href="{% url 'session_manager_logout' %}">Log out</a></div>
+
+{% block messages %}
+	{% if messages %}
+		{% for message in messages %}
+		<b>{{message.level_tag}}:</b> {{message}}<br />
+		{% endfor %}
+	{% endif %}
+{% endblock %}

@@ -8,17 +8,22 @@ from datetime import datetime, timedelta
 
 
 class SessionManagerTestCase(TestCase):
+    """ Base class for SessionManager Test Cases
+    """
 
     def setUp(self, *args, **kwargs):
         super(SessionManagerTestCase, self).setUp(*args, **kwargs)
         self.register_url = reverse('session_manager_register')
         self.login_url = reverse('session_manager_login')
+        self.password_reset_url = reverse('session_manager_profile_reset_password')
 
     def assertMessageInContext(self, request, message_text):
         messages = [msg.message for msg in request.context['messages']._loaded_messages]
         self.assertIn(message_text, messages)
 
     def _create_user(self, email, username=None, password=None):
+        """ Helper function to make a user and return it
+        """
         user = User(email=email)
         if username:
             user.username=username
@@ -32,8 +37,11 @@ class SessionManagerTestCase(TestCase):
 
 
 class TestRegistrationFlow(SessionManagerTestCase):
-
+    """ Test cases for form based registration
+    """
     def test_register_user_happy_path(self):
+        """ Verify a user can register when they provide all the correct data
+        """
         register_get = self.client.get(self.register_url)
         self.assertEqual(register_get.status_code, 200)
 
@@ -52,6 +60,8 @@ class TestRegistrationFlow(SessionManagerTestCase):
         self.assertTrue(new_user.check_password(post_data['password']))
 
     def test_user_already_exists(self):
+        """ Verify the correct registration error message when a user already exists
+        """
         post_data = {
             'email': 'test@example.com',
             'username': 'tester',
@@ -64,7 +74,11 @@ class TestRegistrationFlow(SessionManagerTestCase):
 
 
 class TestLoginFlow(SessionManagerTestCase):
+    """ Test cases for form based log in
+    """
     def test_login_happy_path(self):
+        """ Verify a user can log in with the correct email and password
+        """
         post_data = {
             'email': 'test@example.com',
             'password': 't3st3r@dmin'
@@ -75,6 +89,8 @@ class TestLoginFlow(SessionManagerTestCase):
         self.assertMessageInContext(login_request, 'Log in successful.')
 
     def test_login_no_user(self):
+        """ Verify correct log in error message when given email does not exist
+        """
         post_data = {
             'email': 'test@example.com',
             'password': 't3st3r@dmin'
@@ -84,6 +100,8 @@ class TestLoginFlow(SessionManagerTestCase):
         self.assertMessageInContext(login_request, 'User matching email does not exist.')
 
     def test_login_badpassword(self):
+        """ Verify correct log in error message when bad password given
+        """
         post_data = {
             'email': 'test@example.com',
             'password': 't3st3r@dmin'
@@ -95,8 +113,43 @@ class TestLoginFlow(SessionManagerTestCase):
         self.assertMessageInContext(login_request, 'Password incorrect.')
 
 
+class TestResetPasswordFromProfile(SessionManagerTestCase):
+    """ Test cases for resetting password from user profile when logged in
+    """
+    def test_password_reset(self):
+        """ Vierfy reset password from profile link
+        """
+        user_data = {
+            'email': 'test@example.com',
+            'password': 't3st3r@dmin'
+        }
+        user = self._create_user(**user_data)
+        self.client.post(self.login_url, user_data, follow=True)
+
+        new_password = 't3st3r@dminnewpass'
+        reset_request = self.client.post(
+            self.password_reset_url,
+            {
+                'user_id': user.pk,
+                'password': new_password
+            },
+            follow=True
+        )
+        self.assertMessageInContext(reset_request, 'Your password has been reset. Please log in again to continue.')
+        user_data = {
+            'email': 'test@example.com',
+            'password': new_password
+        }
+        login_request = self.client.post(self.login_url, user_data, follow=True)
+        self.assertMessageInContext(login_request, 'Log in successful.')
+
+
 class TestTokenLogin(SessionManagerTestCase):
+    """ Test cases for token based log in
+    """
     def test_login_with_token_happy_path(self):
+        """ Verify log in with token when valid token and username given in URL
+        """
         user_data = {
             'email': 'test@example.com',
             'password': 't3st3r@dmin'
@@ -111,6 +164,8 @@ class TestTokenLogin(SessionManagerTestCase):
         self.assertFalse(user_token.exists())
 
     def test_login_with_token_user_not_found(self):
+        """ Verify correct log in token error message when bad username given in URL
+        """
         user_data = {
             'email': 'test@example.com',
             'password': 't3st3r@dmin'
@@ -122,6 +177,8 @@ class TestTokenLogin(SessionManagerTestCase):
         self.assertMessageInContext(login_request, 'User matching username not found.')
 
     def test_login_with_token_not_found(self):
+        """ Verify correct log in token error message when bad token given in URL
+        """
         user_data = {
             'email': 'test@example.com',
             'password': 't3st3r@dmin'
@@ -133,6 +190,8 @@ class TestTokenLogin(SessionManagerTestCase):
         self.assertMessageInContext(login_request, 'Token not found.')
 
     def test_login_with_token_expired(self):
+        """ Verify correct log in token error message when expired token given in URL
+        """
         user_data = {
             'email': 'test@example.com',
             'password': 't3st3r@dmin'
@@ -145,7 +204,11 @@ class TestTokenLogin(SessionManagerTestCase):
 
 
 class TestTokenPasswordReset(SessionManagerTestCase):
+    """ Test cases for token based password reset
+    """
     def test_password_reset_happy_path(self):
+        """ Verify password reset with correct token and user works
+        """
         user_data = {
             'email': 'test@example.com',
             'username': 'testuser',
@@ -162,8 +225,16 @@ class TestTokenPasswordReset(SessionManagerTestCase):
         }
         reset_request = self.client.post(user_token.path, post_data, follow=True)
         self.assertMessageInContext(reset_request, 'Password reset. Please log in to continue.')
+        user_data = {
+            'email': 'test@example.com',
+            'password': post_data['password']
+        }
+        login_request = self.client.post(self.login_url, user_data, follow=True)
+        self.assertMessageInContext(login_request, 'Log in successful.')
 
     def test_password_reset_bad_token(self):
+        """ Verify correct error token password reset error message with bad token
+        """
         user_data = {
             'email': 'test@example.com',
             'password': 't3st3r@dmin',
@@ -176,6 +247,8 @@ class TestTokenPasswordReset(SessionManagerTestCase):
         self.assertMessageInContext(reset_request, 'Token not found.')
 
     def test_password_reset_bad_user(self):
+        """ Verify correct error token password reset error message with bad user
+        """
         user_data = {
             'email': 'test@example.com',
             'username': 'testuser',
@@ -194,6 +267,8 @@ class TestTokenPasswordReset(SessionManagerTestCase):
         self.assertMessageInContext(reset_request, 'User matching username not found.')
 
     def test_password_reset_expired(self):
+        """ Verify correct error token password reset error message with expired token
+        """
         user_data = {
             'email': 'test@example.com',
             'password': 't3st3r@dmin',
