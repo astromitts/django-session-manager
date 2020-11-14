@@ -76,10 +76,6 @@ class AuthenticatedView(View):
 
         if not request.user.is_authenticated:
             return self.handle_no_permission()
-        try:
-            self.appuser = User.objects.get(email=request.user.email)
-        except ValueError:
-            return self.handle_no_permission()
 
 
 class CreateUserView(View):
@@ -147,6 +143,7 @@ class LoginUserView(View):
                 return HttpResponse(self.template.render(self.context, request))
             else:
                 login(request, user)
+                messages.success(request, 'Log in successful.')
                 return redirect(reverse(settings.LOGIN_SUCCESS_REDIRECT))
         else:
             messages.error(request, 'Something went wrong. Please correct errors below.')

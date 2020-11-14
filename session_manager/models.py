@@ -47,9 +47,9 @@ class SessionManager(models.Model):
     def check_user_login(cls, email, password):
         user = User.objects.filter(email=email).first()
         if not user:
-            return (None, 'User matching email does not exist')
+            return (None, 'User matching email does not exist.')
         else:
             if user.check_password(password):
                 return (user, None)
             else:
-                return (None, 'Password incorrect')
+                return (None, 'Password incorrect.')
