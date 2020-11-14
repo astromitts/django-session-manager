@@ -112,7 +112,7 @@ class UserToken(models.Model):
         if self.token_type == 'login':
             return '{}?token={}&user={}'.format(reverse('session_manager_login'), self.token, self.user.username)
         else:
-            return '{}?token={}&user={}'.format(reverse('session_manager_reset_password'), self.token, self.user.username)
+            return '{}?token={}&user={}'.format(reverse('session_manager_token_reset_password'), self.token, self.user.username)
 
     @property
     def link(self):

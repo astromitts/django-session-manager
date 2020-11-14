@@ -179,9 +179,9 @@ class LoginUserView(View):
             return HttpResponse(self.template.render(self.context, request))
 
 
-class ReserPasswordView(View):
+class ResetPasswordWithTokenView(View):
     def setup(self, request, *args, **kwargs):
-        super(ReserPasswordView, self).setup(request, *args, **kwargs)
+        super(ResetPasswordWithTokenView, self).setup(request, *args, **kwargs)
         self.template = loader.get_template('session_manager/generic_form.html')
         self.context = {}
         # get the token and error message, needed for both GET and POST
@@ -222,6 +222,30 @@ class ReserPasswordView(View):
             messages.error(request, self.token_error_message)
         self.context.update({'form': form})
         return HttpResponse(self.template.render(self.context, request))
+
+
+class ResetPasswordFromProfileView(AuthenticatedView):
+    def setup(self, request, *args, **kwargs):
+        super(ResetPasswordFromProfileView, self).setup(request, *args, **kwargs)
+        self.template = loader.get_template('session_manager/generic_form.html')
+        self.context = {}
+
+    def get(self, request, *args, **kwargs):
+        form = ResetPasswordForm(initial={'user_id': self.request.user.id})
+        self.context.update({'form': form})
+        return HttpResponse(self.template.render(self.context, request))
+
+    def post(self, request, *args, **kwargs):
+        form = ResetPasswordForm(request.POST)
+        if form.is_valid:
+            user = self.request.user
+            user.set_password(request.POST['password'])
+            user.save()
+            messages.success(request, 'Your password has been reset. Please log in again to continue.')
+            return redirect(reverse(settings.PW_RESET_SUCCESS_REDIRECT))
+        self.context.update({'form': form})
+        return HttpResponse(self.template.render(self.context, request))
+
 
 class LogOutUserView(View):
     def get(self, request, *args, **kwargs):
