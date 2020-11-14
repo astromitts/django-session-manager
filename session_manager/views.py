@@ -79,6 +79,8 @@ class AuthenticatedView(View):
 
 
 class CreateUserView(View):
+    """ Views for a new user registration
+    """
     def setup(self, request, *args, **kwargs):
         super(CreateUserView, self).setup(request, *args, **kwargs)
         self.template = loader.get_template('session_manager/register.html')
@@ -116,24 +118,34 @@ class CreateUserView(View):
 
 
 class LoginUserView(View):
+    """ Views for logging in an existing user
+    """
     def setup(self, request, *args, **kwargs):
         super(LoginUserView, self).setup(request, *args, **kwargs)
         self.template = loader.get_template('session_manager/login.html')
         self.context = {}
 
     def get(self, request, *args, **kwargs):
+        # check if a login token was provided
         if request.GET.get('token') and request.GET.get('user'):
             token, token_error_message = UserToken.get_token(token=request.GET['token'], username=request.GET['user'], token_type='login')
             if token:
                 if token.is_valid:
+                    # a valid token/user combination was given, so log in and delete the token
                     login(request, token.user)
                     messages.success(request, 'Log in successful.')
                     token.delete()
                     return redirect(reverse(settings.LOGIN_SUCCESS_REDIRECT))
                 else:
+                    # provided token was found, but it is expired
+                    # clean up the token
+                    token.delete()
                     messages.error(request, 'Token is expired.')
             else:
+                # no matching token was found for provided user/token
                 messages.error(request, token_error_message)
+
+        # no token was provided, or it was invalid, so just present the login form
         form = LoginUserForm()
         self.context.update({
             'form': form,
@@ -141,6 +153,8 @@ class LoginUserView(View):
         return HttpResponse(self.template.render(self.context, request))
 
     def post(self, request, *args, **kwargs):
+        # we should only get here if they submitted the form instead of a token in the URL
+        # standard Django form handling here
         form = LoginUserForm(request.POST)
         if form.is_valid:
             user, error_reason = SessionManager.check_user_login(
@@ -170,6 +184,7 @@ class ReserPasswordView(View):
         super(ReserPasswordView, self).setup(request, *args, **kwargs)
         self.template = loader.get_template('session_manager/generic_form.html')
         self.context = {}
+        # get the token and error message, needed for both GET and POST
         self.token, self.token_error_message = UserToken.get_token(
             token=request.GET.get('token'),
             username=request.GET.get('user'),
@@ -177,6 +192,7 @@ class ReserPasswordView(View):
         )
 
     def get(self, request, *args, **kwargs):
+        # If we find a valid token, show the reset form with the user's ID passed to it
         if self.token:
             if self.token.is_valid:
                 form = ResetPasswordForm(initial={'user_id': self.token.user.id})
@@ -189,7 +205,8 @@ class ReserPasswordView(View):
 
     def post(self, request, *args, **kwargs):
         form = ResetPasswordForm(request.POST)
-
+        # if a valid token was given and the form is valid, reset user's password
+        # and redirect to login
         if self.token:
             if self.token.is_valid:
                 if form.is_valid:

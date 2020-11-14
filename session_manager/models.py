@@ -14,24 +14,34 @@ from session_manager.utils import twentyfourhoursfromnow
 
 
 class SessionManager(models.Model):
+    """ Abstract helper model for login, register and log out
+    """
     class Meta:
         abstract = True
 
     @classmethod
     def user_exists(cls, email):
+        """ Return True/False if User with given email exists
+        """
         user_qs = User.objects.filter(email=email)
         return user_qs.exists()
 
     @classmethod
     def get_user_by_username(cls, username):
+        """ Retrieve User if one with a matching username exists
+        """
         return User.objects.filter(username=username).first()
 
     @classmethod
     def get_user_by_id(cls, pk):
+        """ Get the User of given primary key
+        """
         return User.objects.get(pk=pk)
 
     @classmethod
     def create_user(cls, email, username, password):
+        """ Create a new User instance, set the password and return the User object
+        """
         new_user = User(
             email=email,
             username=username,
@@ -43,6 +53,13 @@ class SessionManager(models.Model):
 
     @classmethod
     def check_user_login(cls, email, password):
+        """ Checks password for given email and password combination if the email has a User
+            Returns tuple
+                (
+                    object: User if it is found and the password is correct,
+                    string: error message if user not found or password incorrect
+                )
+        """
         user = User.objects.filter(email=email).first()
         if not user:
             return (None, 'User matching email does not exist.')
@@ -54,6 +71,9 @@ class SessionManager(models.Model):
 
 
 class UserToken(models.Model):
+    """ Model for generating tokens that be used to login users without
+        password or for resetting passwords
+    """
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     token = models.CharField(max_length=64, blank=True)
     token_type = models.CharField(
@@ -68,6 +88,8 @@ class UserToken(models.Model):
     expiration = models.DateTimeField(blank=True, default=twentyfourhoursfromnow)
 
     def _generate_login_token(self):
+        """ Helper function to generate unique tokens
+        """
         token_base = '{}-{}-{}'.format(
             self.user.email,
             datetime.now(),
@@ -77,12 +99,16 @@ class UserToken(models.Model):
         return token_hash.hexdigest()
 
     def save(self, *args, **kwargs):
+        """ Override the save function so that a token is generated on initial creation
+        """
         if not self.token:
             self.token = self._generate_login_token()
         super(UserToken, self).save(*args, **kwargs)
 
     @property
     def path(self):
+        """ Get the URL path expected by the login and password reset views
+        """
         if self.token_type == 'login':
             return '{}?token={}&user={}'.format(reverse('session_manager_login'), self.token, self.user.username)
         else:
@@ -90,6 +116,8 @@ class UserToken(models.Model):
 
     @property
     def link(self):
+        """ Get a full link for the path based on the HOST value found in settings
+        """
         return '{}{}'.format(settings.HOST, self.path)
 
     def __str__(self):
@@ -97,6 +125,10 @@ class UserToken(models.Model):
 
     @classmethod
     def get_token(cls, token, username, token_type):
+        """ Retrieve a token that matches the given username and type if it exists
+            Returns a tuple:
+                (object: UserToken if found, string: error message if no token found)
+        """
         user = SessionManager.get_user_by_username(username)
         if not user:
             return (None, 'User matching username not found.')
@@ -108,6 +140,8 @@ class UserToken(models.Model):
 
     @property
     def is_valid(self):
+        """ Returns True if the token is not expired, else returns False
+        """
         utc=pytz.UTC
         if self.expiration >= utc.localize(datetime.now()):
             return True
