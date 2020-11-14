@@ -1,6 +1,10 @@
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth.models import User
+from session_manager.models import UserToken
+from session_manager.utils import yesterday
+
+from datetime import datetime, timedelta
 
 
 class SessionManagerTestCase(TestCase):
@@ -58,6 +62,8 @@ class TestRegistrationFlow(SessionManagerTestCase):
         self.assertEqual(register_post.status_code, 200)
         self.assertMessageInContext(register_post, 'A user with this email address already exists.')
 
+
+class TestLoginFlow(SessionManagerTestCase):
     def test_login_happy_path(self):
         post_data = {
             'email': 'test@example.com',
@@ -87,3 +93,116 @@ class TestRegistrationFlow(SessionManagerTestCase):
         login_request = self.client.post(self.login_url, post_data, follow=True)
         self.assertEqual(login_request.status_code, 200)
         self.assertMessageInContext(login_request, 'Password incorrect.')
+
+
+class TestTokenLogin(SessionManagerTestCase):
+    def test_login_with_token_happy_path(self):
+        user_data = {
+            'email': 'test@example.com',
+            'password': 't3st3r@dmin'
+        }
+        user = self._create_user(**user_data)
+        user_token = UserToken(user=user, token_type='login')
+        user_token.save()
+        token_str = user_token.token
+        login_request = self.client.get(user_token.path, follow=True)
+        self.assertMessageInContext(login_request, 'Log in successful.')
+        user_token = UserToken.objects.filter(token=token_str)
+        self.assertFalse(user_token.exists())
+
+    def test_login_with_token_user_not_found(self):
+        user_data = {
+            'email': 'test@example.com',
+            'password': 't3st3r@dmin'
+        }
+        user = self._create_user(**user_data)
+        user_token = UserToken(user=user, token_type='login')
+        user_token.save()
+        login_request = self.client.get(user_token.path.replace(user_token.user.username, 'asdf'), follow=True)
+        self.assertMessageInContext(login_request, 'User matching username not found.')
+
+    def test_login_with_token_not_found(self):
+        user_data = {
+            'email': 'test@example.com',
+            'password': 't3st3r@dmin'
+        }
+        user = self._create_user(**user_data)
+        user_token = UserToken(user=user, token_type='login')
+        user_token.save()
+        login_request = self.client.get(user_token.path.replace(user_token.token, 'asdf'), follow=True)
+        self.assertMessageInContext(login_request, 'Token not found.')
+
+    def test_login_with_token_expired(self):
+        user_data = {
+            'email': 'test@example.com',
+            'password': 't3st3r@dmin'
+        }
+        user = self._create_user(**user_data)
+        user_token = UserToken(user=user, token_type='login', expiration=yesterday())
+        user_token.save()
+        login_request = self.client.get(user_token.path, follow=True)
+        self.assertMessageInContext(login_request, 'Token is expired.')
+
+
+class TestTokenPasswordReset(SessionManagerTestCase):
+    def test_password_reset_happy_path(self):
+        user_data = {
+            'email': 'test@example.com',
+            'username': 'testuser',
+            'password': 't3st3r@dmin'
+        }
+        user = self._create_user(**user_data)
+        user_token = UserToken(user=user, token_type='reset')
+        user_token.save()
+        reset_request = self.client.get(user_token.path, follow=True)
+        self.assertIn('form', str(reset_request.content))
+        post_data = {
+            'user_id': user.pk,
+            'password': 't3st3r@dminnewpass'
+        }
+        reset_request = self.client.post(user_token.path, post_data, follow=True)
+        self.assertMessageInContext(reset_request, 'Password reset. Please log in to continue.')
+
+    def test_password_reset_bad_token(self):
+        user_data = {
+            'email': 'test@example.com',
+            'password': 't3st3r@dmin',
+            'username': 'testuser',
+        }
+        user = self._create_user(**user_data)
+        user_token = UserToken(user=user, token_type='reset')
+        user_token.save()
+        reset_request = self.client.post(user_token.path.replace(user_token.token, 'asdf'), follow=True)
+        self.assertMessageInContext(reset_request, 'Token not found.')
+
+    def test_password_reset_bad_user(self):
+        user_data = {
+            'email': 'test@example.com',
+            'username': 'testuser',
+            'password': 't3st3r@dmin'
+        }
+        user = self._create_user(**user_data)
+        user_token = UserToken(user=user, token_type='reset')
+        user_token.save()
+        reset_request = self.client.get(user_token.path, follow=True)
+        self.assertIn('form', str(reset_request.content))
+        post_data = {
+            'user_id': user.pk,
+            'password': 't3st3r@dminnewpass'
+        }
+        reset_request = self.client.post(user_token.path.replace(user_token.user.username, 'asdf'), post_data, follow=True)
+        self.assertMessageInContext(reset_request, 'User matching username not found.')
+
+    def test_password_reset_expired(self):
+        user_data = {
+            'email': 'test@example.com',
+            'password': 't3st3r@dmin',
+            'username': 'testuser',
+        }
+        user = self._create_user(**user_data)
+        user_token = UserToken(user=user, token_type='reset', expiration=yesterday())
+        user_token.save()
+        reset_request = self.client.post(user_token.path, follow=True)
+        self.assertMessageInContext(reset_request, 'Token is expired.')
+
+

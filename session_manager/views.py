@@ -11,8 +11,8 @@ from django.urls import reverse
 
 from urllib.parse import urlparse
 
-from session_manager.forms import CreateUserForm, LoginUserForm
-from session_manager.models import SessionManager
+from session_manager.forms import CreateUserForm, LoginUserForm, ResetPasswordForm
+from session_manager.models import SessionManager, UserToken
 
 
 class AuthenticatedView(View):
@@ -122,6 +122,18 @@ class LoginUserView(View):
         self.context = {}
 
     def get(self, request, *args, **kwargs):
+        if request.GET.get('token') and request.GET.get('user'):
+            token, token_error_message = UserToken.get_token(token=request.GET['token'], username=request.GET['user'], token_type='login')
+            if token:
+                if token.is_valid:
+                    login(request, token.user)
+                    messages.success(request, 'Log in successful.')
+                    token.delete()
+                    return redirect(reverse(settings.LOGIN_SUCCESS_REDIRECT))
+                else:
+                    messages.error(request, 'Token is expired.')
+            else:
+                messages.error(request, token_error_message)
         form = LoginUserForm()
         self.context.update({
             'form': form,
@@ -152,6 +164,47 @@ class LoginUserView(View):
             })
             return HttpResponse(self.template.render(self.context, request))
 
+
+class ReserPasswordView(View):
+    def setup(self, request, *args, **kwargs):
+        super(ReserPasswordView, self).setup(request, *args, **kwargs)
+        self.template = loader.get_template('session_manager/generic_form.html')
+        self.context = {}
+        self.token, self.token_error_message = UserToken.get_token(
+            token=request.GET.get('token'),
+            username=request.GET.get('user'),
+            token_type='reset'
+        )
+
+    def get(self, request, *args, **kwargs):
+        if self.token:
+            if self.token.is_valid:
+                form = ResetPasswordForm(initial={'user_id': self.token.user.id})
+                self.context.update({'form': form})
+            else:
+                messages.error(request, 'Token is expired.')
+        else:
+            messages.error(request, self.token_error_message)
+        return HttpResponse(self.template.render(self.context, request))
+
+    def post(self, request, *args, **kwargs):
+        form = ResetPasswordForm(request.POST)
+
+        if self.token:
+            if self.token.is_valid:
+                if form.is_valid:
+                    user = SessionManager.get_user_by_id(request.POST['user_id'])
+                    user.set_password(request.POST['password'])
+                    user.save()
+                    messages.success(request, 'Password reset. Please log in to continue.')
+                    self.token.delete()
+                    return redirect(reverse('session_manager_login'))
+            else:
+                messages.error(request, 'Token is expired.')
+        else:
+            messages.error(request, self.token_error_message)
+        self.context.update({'form': form})
+        return HttpResponse(self.template.render(self.context, request))
 
 class LogOutUserView(View):
     def get(self, request, *args, **kwargs):
