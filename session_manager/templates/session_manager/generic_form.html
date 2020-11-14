@@ -1,0 +1,21 @@
+{% block messages %}
+	{% if messages %}
+		{% for message in messages %}
+		<b>{{message.level_tag}}:</b> {{message}}<br />
+		{% endfor %}
+	{% endif %}
+{% endblock %}
+
+{% block form %}
+	<form class="form" method="POST" action="">
+	{% csrf_token %}
+	<table class="table">
+		{% if form %}
+			{{form.as_table}}
+		{% endif %}
+		<tr>
+			<td></td>
+			<td><input type="submit" class="btn btn-primary" value="{% if submit_text %}{{submit_text}}{% else %}Submit{% endif %}" /></td>
+	</table>
+	</form>
+{% endblock %}
