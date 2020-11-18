@@ -95,7 +95,7 @@ class CreateUserView(View):
 
     def post(self, request, *args, **kwargs):
         form = CreateUserForm(request.POST)
-        if form.is_valid:
+        if form.is_valid():
             if SessionManager.user_exists(email=request.POST['email']):
                 messages.error(request, 'A user with this email address already exists.')
                 self.context.update({
@@ -156,7 +156,7 @@ class LoginUserView(View):
         # we should only get here if they submitted the form instead of a token in the URL
         # standard Django form handling here
         form = LoginUserForm(request.POST)
-        if form.is_valid:
+        if form.is_valid():
             user, error_reason = SessionManager.check_user_login(
                 email=request.POST['email'],
                 password=request.POST['password']
@@ -209,7 +209,7 @@ class ResetPasswordWithTokenView(View):
         # and redirect to login
         if self.token:
             if self.token.is_valid:
-                if form.is_valid:
+                if form.is_valid():
                     user = SessionManager.get_user_by_id(request.POST['user_id'])
                     user.set_password(request.POST['password'])
                     user.save()
@@ -237,7 +237,7 @@ class ResetPasswordFromProfileView(AuthenticatedView):
 
     def post(self, request, *args, **kwargs):
         form = ResetPasswordForm(request.POST)
-        if form.is_valid:
+        if form.is_valid():
             user = self.request.user
             user.set_password(request.POST['password'])
             user.save()
