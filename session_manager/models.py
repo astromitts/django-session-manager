@@ -30,7 +30,7 @@ class SessionManager(models.Model):
     def get_user_by_username(cls, username):
         """ Retrieve User if one with a matching username exists
         """
-        return User.objects.filter(username=username).first()
+        return User.objects.filter(username__iexact=username).first()
 
     @classmethod
     def get_user_by_id(cls, pk):
