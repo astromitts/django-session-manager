@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from session_manager.models import UserToken
 from session_manager.utils import yesterday
 
+from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 
 
@@ -20,6 +21,11 @@ class SessionManagerTestCase(TestCase):
     def assertMessageInContext(self, request, message_text):
         messages = [msg.message for msg in request.context['messages']._loaded_messages]
         self.assertIn(message_text, messages)
+
+    def assertNonFieldFormError(self, request, message_text):
+        content = BeautifulSoup(request.content, features="html.parser")
+        error_list = content.find('ul', {'class': 'errorlist nonfield'})
+        self.assertIn(message_text, error_list.text)
 
     def _create_user(self, email, username=None, password=None):
         """ Helper function to make a user and return it
@@ -59,18 +65,113 @@ class TestRegistrationFlow(SessionManagerTestCase):
         self.assertEqual(new_user.username, post_data['username'])
         self.assertTrue(new_user.check_password(post_data['password']))
 
-    def test_user_already_exists(self):
-        """ Verify the correct registration error message when a user already exists
+    def test_username_already_exists(self):
+        """ Verify the correct registration error message when a username already exists
         """
-        post_data = {
+        existing_user_data = {
             'email': 'test@example.com',
             'username': 'tester',
             'password': 't3st3r@dmin'
         }
-        self._create_user(**post_data)
+        self._create_user(**existing_user_data)
+
+        post_data = {
+            'email': 'different@example.com',
+            'username': 'tester',
+            'password': 't4st4r@dmin'
+        }
+
         register_post = self.client.post(self.register_url, post_data)
         self.assertEqual(register_post.status_code, 200)
-        self.assertMessageInContext(register_post, 'A user with this email address already exists.')
+        self.assertNonFieldFormError(register_post, 'A user with this username already exists.')
+
+    def test_password_requirements(self):
+        """ Verify the correct registration error message when a username already exists
+        """
+        must_contain_letter = 'Must contain at least one letter.'
+        must_contain_number = 'Must contain at least one number.'
+        must_contain_special = 'Must contain at least one special character'
+        min_length = 'Must be at least 8 characters.'
+
+        bad_password_posts = [
+            {
+                'post_data': {
+                    'email': 'different@example.com',
+                    'username': 'tester',
+                    'password': 't1$'
+                },
+                'expected_errors': [min_length, ]
+            },
+            {
+                'post_data': {
+                    'email': 'different@example.com',
+                    'username': 'tester',
+                    'password': 'tt$'
+                },
+                'expected_errors': [min_length, must_contain_number]
+            },
+            {
+                'post_data': {
+                    'email': 'different@example.com',
+                    'username': 'tester',
+                    'password': 'tt1'
+                },
+                'expected_errors': [min_length, must_contain_special]
+            },
+            {
+                'post_data': {
+                    'email': 'different@example.com',
+                    'username': 'tester',
+                    'password': '$$1'
+                },
+                'expected_errors': [min_length, must_contain_letter]
+            },
+            {
+                'post_data': {
+                    'email': 'different@example.com',
+                    'username': 'tester',
+                    'password': 'tttttttt'
+                },
+                'expected_errors': [must_contain_special, must_contain_number]
+            },
+            {
+                'post_data': {
+                    'email': 'different@example.com',
+                    'username': 'tester',
+                    'password': '1111111111'
+                },
+                'expected_errors': [must_contain_special, must_contain_letter]
+            },
+            {
+                'post_data': {
+                    'email': 'different@example.com',
+                    'username': 'tester',
+                    'password': '##########'
+                },
+                'expected_errors': [must_contain_number, must_contain_letter]
+            },
+            {
+                'post_data': {
+                    'email': 'different@example.com',
+                    'username': 'tester',
+                    'password': '#########1'
+                },
+                'expected_errors': [must_contain_letter]
+            },
+            {
+                'post_data': {
+                    'email': 'different@example.com',
+                    'username': 'tester',
+                    'password': '#########a'
+                },
+                'expected_errors': [must_contain_number]
+            },
+        ]
+
+        for post in bad_password_posts:
+            register_post = self.client.post(self.register_url, post['post_data'])
+            for expected_error in post['expected_errors']:
+                self.assertNonFieldFormError(register_post, expected_error)
 
 
 class TestLoginFlow(SessionManagerTestCase):
