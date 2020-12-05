@@ -135,6 +135,7 @@ class LoginUserView(View):
                     login(request, token.user)
                     messages.success(request, 'Log in successful.')
                     token.delete()
+                    request.session['user_is_authenticated'] = True
                     return redirect(reverse(settings.LOGIN_SUCCESS_REDIRECT))
                 else:
                     # provided token was found, but it is expired
@@ -158,7 +159,7 @@ class LoginUserView(View):
         form = LoginUserForm(request.POST)
         if form.is_valid():
             user, error_reason = SessionManager.check_user_login(
-                email=request.POST['email'],
+                username_or_email=request.POST['username_or_email'],
                 password=request.POST['password']
             )
             if not user:
@@ -170,7 +171,11 @@ class LoginUserView(View):
             else:
                 login(request, user)
                 messages.success(request, 'Log in successful.')
-                return redirect(reverse(settings.LOGIN_SUCCESS_REDIRECT))
+                request.session['user_is_authenticated'] = True
+                if request.session.get('login_redirect_from'):
+                    return redirect(request.session.get('login_redirect_from'))
+                else:
+                    return redirect(reverse(settings.LOGIN_SUCCESS_REDIRECT))
         else:
             messages.error(request, 'Something went wrong. Please correct errors below.')
             self.context.update({
@@ -251,6 +256,7 @@ class LogOutUserView(View):
     def get(self, request, *args, **kwargs):
         logout(request)
         messages.success(request, 'Logged out.')
+        request.session['user_is_authenticated'] = False
         return redirect(reverse('session_manager_login'))
 
 

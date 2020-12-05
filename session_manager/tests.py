@@ -27,14 +27,14 @@ class SessionManagerTestCase(TestCase):
         error_list = content.find('ul', {'class': 'errorlist nonfield'})
         self.assertIn(message_text, error_list.text)
 
-    def _create_user(self, email, username=None, password=None):
+    def _create_user(self, username_or_email, username=None, password=None):
         """ Helper function to make a user and return it
         """
-        user = User(email=email)
+        user = User(email=username_or_email)
         if username:
             user.username=username
         else:
-            user.username=email
+            user.username=username_or_email
         user.save()
         if password:
             user.set_password(password)
@@ -69,14 +69,14 @@ class TestRegistrationFlow(SessionManagerTestCase):
         """ Verify the correct registration error message when a username already exists
         """
         existing_user_data = {
-            'email': 'test@example.com',
+            'username_or_email': 'test@example.com',
             'username': 'tester',
             'password': 't3st3r@dmin'
         }
         self._create_user(**existing_user_data)
 
         post_data = {
-            'email': 'different@example.com',
+            'username_or_email': 'different@example.com',
             'username': 'tester',
             'password': 't4st4r@dmin'
         }
@@ -181,7 +181,7 @@ class TestLoginFlow(SessionManagerTestCase):
         """ Verify a user can log in with the correct email and password
         """
         post_data = {
-            'email': 'test@example.com',
+            'username_or_email': 'test@example.com',
             'password': 't3st3r@dmin'
         }
         self._create_user(**post_data)
@@ -193,7 +193,7 @@ class TestLoginFlow(SessionManagerTestCase):
         """ Verify correct log in error message when given email does not exist
         """
         post_data = {
-            'email': 'test@example.com',
+            'username_or_email': 'test@example.com',
             'password': 't3st3r@dmin'
         }
         login_request = self.client.post(self.login_url, post_data, follow=True)
@@ -204,7 +204,7 @@ class TestLoginFlow(SessionManagerTestCase):
         """ Verify correct log in error message when bad password given
         """
         post_data = {
-            'email': 'test@example.com',
+            'username_or_email': 'test@example.com',
             'password': 't3st3r@dmin'
         }
         self._create_user(**post_data)
@@ -221,7 +221,7 @@ class TestResetPasswordFromProfile(SessionManagerTestCase):
         """ Vierfy reset password from profile link
         """
         user_data = {
-            'email': 'test@example.com',
+            'username_or_email': 'test@example.com',
             'password': 't3st3r@dmin'
         }
         user = self._create_user(**user_data)
@@ -238,7 +238,7 @@ class TestResetPasswordFromProfile(SessionManagerTestCase):
         )
         self.assertMessageInContext(reset_request, 'Your password has been reset. Please log in again to continue.')
         user_data = {
-            'email': 'test@example.com',
+            'username_or_email': 'test@example.com',
             'password': new_password
         }
         login_request = self.client.post(self.login_url, user_data, follow=True)
@@ -252,7 +252,7 @@ class TestTokenLogin(SessionManagerTestCase):
         """ Verify log in with token when valid token and username given in URL
         """
         user_data = {
-            'email': 'test@example.com',
+            'username_or_email': 'test@example.com',
             'password': 't3st3r@dmin'
         }
         user = self._create_user(**user_data)
@@ -268,7 +268,7 @@ class TestTokenLogin(SessionManagerTestCase):
         """ Verify correct log in token error message when bad username given in URL
         """
         user_data = {
-            'email': 'test@example.com',
+            'username_or_email': 'test@example.com',
             'password': 't3st3r@dmin'
         }
         user = self._create_user(**user_data)
@@ -281,7 +281,7 @@ class TestTokenLogin(SessionManagerTestCase):
         """ Verify correct log in token error message when bad token given in URL
         """
         user_data = {
-            'email': 'test@example.com',
+            'username_or_email': 'test@example.com',
             'password': 't3st3r@dmin'
         }
         user = self._create_user(**user_data)
@@ -294,7 +294,7 @@ class TestTokenLogin(SessionManagerTestCase):
         """ Verify correct log in token error message when expired token given in URL
         """
         user_data = {
-            'email': 'test@example.com',
+            'username_or_email': 'test@example.com',
             'password': 't3st3r@dmin'
         }
         user = self._create_user(**user_data)
@@ -311,7 +311,7 @@ class TestTokenPasswordReset(SessionManagerTestCase):
         """ Verify password reset with correct token and user works
         """
         user_data = {
-            'email': 'test@example.com',
+            'username_or_email': 'test@example.com',
             'username': 'testuser',
             'password': 't3st3r@dmin'
         }
@@ -327,7 +327,7 @@ class TestTokenPasswordReset(SessionManagerTestCase):
         reset_request = self.client.post(user_token.path, post_data, follow=True)
         self.assertMessageInContext(reset_request, 'Password reset. Please log in to continue.')
         user_data = {
-            'email': 'test@example.com',
+            'username_or_email': 'test@example.com',
             'password': post_data['password']
         }
         login_request = self.client.post(self.login_url, user_data, follow=True)
@@ -337,7 +337,7 @@ class TestTokenPasswordReset(SessionManagerTestCase):
         """ Verify correct error token password reset error message with bad token
         """
         user_data = {
-            'email': 'test@example.com',
+            'username_or_email': 'test@example.com',
             'password': 't3st3r@dmin',
             'username': 'testuser',
         }
@@ -351,7 +351,7 @@ class TestTokenPasswordReset(SessionManagerTestCase):
         """ Verify correct error token password reset error message with bad user
         """
         user_data = {
-            'email': 'test@example.com',
+            'username_or_email': 'test@example.com',
             'username': 'testuser',
             'password': 't3st3r@dmin'
         }
@@ -371,7 +371,7 @@ class TestTokenPasswordReset(SessionManagerTestCase):
         """ Verify correct error token password reset error message with expired token
         """
         user_data = {
-            'email': 'test@example.com',
+            'username_or_email': 'test@example.com',
             'password': 't3st3r@dmin',
             'username': 'testuser',
         }

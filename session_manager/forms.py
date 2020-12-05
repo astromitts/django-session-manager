@@ -9,7 +9,6 @@ from session_manager.utils import special_chars
 
 class CreateUserForm(ModelForm):
 
-
     def __init__(self, *args, **kwargs):
         super(CreateUserForm, self).__init__(*args, **kwargs)
         self.fields['username'].help_text = 'Minimum 3 characters. Letters, numbers, and underscores only.'
@@ -87,9 +86,10 @@ class ResetPasswordForm(ModelForm):
 
 
 class LoginUserForm(ModelForm):
+    username_or_email = CharField()
     class Meta:
         model = User
-        fields = ['email', 'password']
+        fields = ['username_or_email', 'password']
         widgets = {
             'password': PasswordInput(),
         }
