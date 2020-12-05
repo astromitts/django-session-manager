@@ -47,6 +47,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'session_manager.middleware.session_request_validation',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
@@ -120,6 +121,16 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+AUTHENTICATION_EXEMPT_VIEWS = [
+    'session_manager_register',
+    'session_manager_login',
+    'resetpassword',
+]
+
+MIDDLEWARE_DEBUG = False
+
+# override these to redirect to customized templates
+AUTHENTICATION_REQUIRED_REDIRECT = 'session_manager_login'
 LOGIN_SUCCESS_REDIRECT = 'session_manager_index'
 PW_RESET_SUCCESS_REDIRECT = 'session_manager_index'
 
