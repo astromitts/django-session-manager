@@ -19,10 +19,16 @@ class SessionManagerTestCase(TestCase):
         self.password_reset_url = reverse('session_manager_profile_reset_password')
 
     def assertMessageInContext(self, request, message_text):
+        """ Helper function to raise an assertion error if an expected message
+            is absent from request context
+        """
         messages = [msg.message for msg in request.context['messages']._loaded_messages]
         self.assertIn(message_text, messages)
 
     def assertNonFieldFormError(self, request, message_text):
+        """ Helper function to raise an assertion error if an expected message
+            is absent from the rendered request HTML
+        """
         content = BeautifulSoup(request.content, features="html.parser")
         error_list = content.find('ul', {'class': 'errorlist nonfield'})
         self.assertIn(message_text, error_list.text)
@@ -218,7 +224,7 @@ class TestResetPasswordFromProfile(SessionManagerTestCase):
     """ Test cases for resetting password from user profile when logged in
     """
     def test_password_reset(self):
-        """ Vierfy reset password from profile link
+        """ Verify reset password from profile link
         """
         user_data = {
             'username_or_email': 'test@example.com',
