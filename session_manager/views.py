@@ -118,7 +118,8 @@ class CreateUserView(View):
 
 
 class LoginUserView(View):
-    """ Views for logging in an existing user
+    """ Views for logging in an existing user, either via form post
+        or token URL
     """
     def setup(self, request, *args, **kwargs):
         super(LoginUserView, self).setup(request, *args, **kwargs)
@@ -146,7 +147,7 @@ class LoginUserView(View):
                 # no matching token was found for provided user/token
                 messages.error(request, token_error_message)
 
-        # no token was provided, or it was invalid, so just present the login form
+        # no token was provided, or it was invalid, so just render the login form
         form = LoginUserForm()
         self.context.update({
             'form': form,
@@ -185,6 +186,9 @@ class LoginUserView(View):
 
 
 class ResetPasswordWithTokenView(View):
+    """ View that allows a user to reset their password via a token,
+        without needing to log in
+    """
     def setup(self, request, *args, **kwargs):
         super(ResetPasswordWithTokenView, self).setup(request, *args, **kwargs)
         self.template = loader.get_template('session_manager/generic_form.html')
@@ -230,6 +234,8 @@ class ResetPasswordWithTokenView(View):
 
 
 class ResetPasswordFromProfileView(AuthenticatedView):
+    """ View that allows a user to reset their password when logged in
+    """
     def setup(self, request, *args, **kwargs):
         super(ResetPasswordFromProfileView, self).setup(request, *args, **kwargs)
         self.template = loader.get_template('session_manager/generic_form.html')
