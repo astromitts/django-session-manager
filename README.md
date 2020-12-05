@@ -13,6 +13,7 @@ Extend or override the template files to customize.
 
 ### Settings
 LOGIN_SUCCESS_REDIRECT (String)
+
 	urls.py path name of the view to redirect users to after
 	successful log in
 
@@ -25,10 +26,12 @@ authentication, as well as rendering an error page for
 
 ### Settings
 MIDDLEWARE_DEBUG (Boolean)
+
 	Set to True to bypass the middleware authentication/error 
 	handling
 
 DEFAULT_ERROR_TEMPLATE (String)
+
 	Static path to the HTML template to use to display error
 	messages to users. The following ontext is passed to it 
 	from the middleware function:
@@ -36,5 +39,11 @@ DEFAULT_ERROR_TEMPLATE (String)
 	error_message: String, error message to display on page
 
 AUTHENTICATION_REQUIRED_REDIRECT (String)
+
 	urls.py path name of the view to redirect unauthenticated
 	users to when they attempt to access a restricted page
+
+## Tests
+
+All view logic should be covered via tests.py, to run:
+`python manage.py test --settings=project.test_settings`
