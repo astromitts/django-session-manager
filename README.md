@@ -11,19 +11,19 @@ support emails for login or reset tokens.
 
 Extend or override the template files to customize.
 
-## Settings
+### Settings
 LOGIN_SUCCESS_REDIRECT (String)
 	urls.py path name of the view to redirect users to after
 	successful log in
 
 
-# Middleware
+## Middleware
 Session manager middleware handles redirecting
 unauthenticated users from accessing views that require
 authentication, as well as rendering an error page for 
 404s and uncaught exceptions to give a good UX.
 
-## Settings
+### Settings
 MIDDLEWARE_DEBUG (Boolean)
 	Set to True to bypass the middleware authentication/error 
 	handling
