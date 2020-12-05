@@ -133,5 +133,6 @@ MIDDLEWARE_DEBUG = False
 AUTHENTICATION_REQUIRED_REDIRECT = 'session_manager_login'
 LOGIN_SUCCESS_REDIRECT = 'session_manager_index'
 PW_RESET_SUCCESS_REDIRECT = 'session_manager_index'
+DEFAULT_ERROR_TEMPLATE = 'session_manager/error.html'
 
 HOST = '127.0.0.1:8000'

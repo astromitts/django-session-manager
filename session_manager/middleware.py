@@ -56,7 +56,7 @@ def session_request_validation(get_response):
             }
             return render(
                 request,
-                'session_manager/error.html',
+                settings.DEFAULT_ERROR_TEMPLATE,
                 context=context,
                 status=status_code
             )
