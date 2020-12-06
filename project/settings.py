@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,7 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'crispy_forms',
     'session_manager',
+    'base',
 ]
 
 MIDDLEWARE = [
@@ -78,7 +81,7 @@ WSGI_APPLICATION = 'project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': str(BASE_DIR / 'db.sqlite3'),
     }
 }
 
@@ -120,6 +123,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'base/static')
 
 AUTHENTICATION_EXEMPT_VIEWS = [
     'session_manager_register',
@@ -131,8 +135,9 @@ MIDDLEWARE_DEBUG = False
 
 # override these to redirect to customized templates
 AUTHENTICATION_REQUIRED_REDIRECT = 'session_manager_login'
-LOGIN_SUCCESS_REDIRECT = 'session_manager_index'
-PW_RESET_SUCCESS_REDIRECT = 'session_manager_index'
+LOGIN_SUCCESS_REDIRECT = 'session_manager_profile'
+PW_RESET_SUCCESS_REDIRECT = 'session_manager_profile'
 DEFAULT_ERROR_TEMPLATE = 'session_manager/error.html'
 
 HOST = '127.0.0.1:8000'
+CRISPY_TEMPLATE_PACK = 'bootstrap3'

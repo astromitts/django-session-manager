@@ -1,17 +1,15 @@
-<h1>Welcome!</h1> 
-<div>You are logged in as</div>
-<ul>
-	<li><b>Username:</b> {{request.user.username}}</li>
-	<li><b>Email:</b> {{request.user.email}})!</li>
-</ul>
+{% extends 'base/project_base.html' %}
+{% block page_content %}
 
-<div><a href="{% url 'session_manager_profile_reset_password' %}">Reset password</a></div>
-<div><a href="{% url 'session_manager_logout' %}">Log out</a></div>
+	<h1>Welcome!</h1> 
+	<div>You are logged in as</div>
+	<ul>
+		<li><b>Username:</b> {{request.user.username}}</li>
+		<li><b>Email:</b> {{request.user.email}}</li>
+	</ul>
 
-{% block messages %}
-	{% if messages %}
-		{% for message in messages %}
-		<b>{{message.level_tag}}:</b> {{message}}<br />
-		{% endfor %}
-	{% endif %}
+	<div><a href="{% url 'session_manager_profile_reset_password' %}">Reset password</a></div>
+	<div><a href="{% url 'session_manager_logout' %}">Log out</a></div>
+
 {% endblock %}
+

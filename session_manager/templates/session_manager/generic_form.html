@@ -1,18 +1,10 @@
-{% block messages %}
-	{% if messages %}
-		{% for message in messages %}
-		<b>{{message.level_tag}}:</b> {{message}}<br />
-		{% endfor %}
-	{% endif %}
-{% endblock %}
-
 {% block form %}
 	{% if form %}
 		<form class="form" method="POST" action="">
 		{% csrf_token %}
 		<table class="table">
 			{% if form %}
-				{{form.as_table}}
+				{{form.as_p}}
 			{% endif %}
 			<tr>
 				<td></td>

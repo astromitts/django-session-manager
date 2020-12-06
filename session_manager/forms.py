@@ -1,4 +1,10 @@
-from django.forms import ModelForm, PasswordInput, CharField, HiddenInput
+from django.forms import (
+    ModelForm,
+    PasswordInput,
+    CharField,
+    HiddenInput,
+    TextInput,
+)
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils.safestring import mark_safe
@@ -18,7 +24,9 @@ class CreateUserForm(ModelForm):
         model = User
         fields = ['email', 'username', 'password']
         widgets = {
-            'password': PasswordInput(),
+            'password': PasswordInput(attrs={'class': 'form-control form-control-sm'}),
+            'email': TextInput(attrs={'class': 'form-control form-control-sm'}),
+            'username': TextInput(attrs={'class': 'form-control form-control-sm'})
         }
 
     def clean(self):
@@ -94,16 +102,16 @@ class ResetPasswordForm(ModelForm):
         model = User
         fields = ['password', 'user_id']
         widgets = {
-            'password': PasswordInput(),
+            'password': PasswordInput(attrs={'class': 'form-control form-control-sm'}),
             'user_id': HiddenInput()
         }
 
 
 class LoginUserForm(ModelForm):
-    username_or_email = CharField()
+    username_or_email = CharField(widget=TextInput(attrs={'class': 'form-control'}))
     class Meta:
         model = User
         fields = ['username_or_email', 'password']
         widgets = {
-            'password': PasswordInput(),
+            'password': PasswordInput(attrs={'class': 'form-control form-control-sm'})
         }

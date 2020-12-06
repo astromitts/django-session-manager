@@ -191,7 +191,7 @@ class ResetPasswordWithTokenView(View):
     """
     def setup(self, request, *args, **kwargs):
         super(ResetPasswordWithTokenView, self).setup(request, *args, **kwargs)
-        self.template = loader.get_template('session_manager/generic_form.html')
+        self.template = loader.get_template('session_manager/reset_password.html')
         self.context = {}
         # get the token and error message, needed for both GET and POST
         self.token, self.token_error_message = UserToken.get_token(
@@ -238,8 +238,13 @@ class ResetPasswordFromProfileView(AuthenticatedView):
     """
     def setup(self, request, *args, **kwargs):
         super(ResetPasswordFromProfileView, self).setup(request, *args, **kwargs)
-        self.template = loader.get_template('session_manager/generic_form.html')
-        self.context = {}
+        self.template = loader.get_template('session_manager/reset_password.html')
+        self.context = {
+            'breadcrumbs': [
+                ('Profile', reverse('session_manager_profile')),
+                ('Reset Password', None)
+            ]
+        }
 
     def get(self, request, *args, **kwargs):
         form = ResetPasswordForm(initial={'user_id': self.request.user.id})
