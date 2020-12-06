@@ -48,6 +48,50 @@ class SessionManagerTestCase(TestCase):
         return user
 
 
+class MiddlewareTestCase(SessionManagerTestCase):
+    def test_middleware_404(self):
+        with self.settings(MIDDLEWARE_DEBUG=False):
+            bad_url = '/asdf/'
+            result_request = self.client.get(bad_url)
+            self.assertEqual(result_request.status_code, 404)
+
+    def test_middleware_authentication_not_required(self):
+        with self.settings(MIDDLEWARE_DEBUG=False):
+            bad_url = '/login/'
+            result_request = self.client.get(bad_url)
+            self.assertEqual(result_request.status_code, 200)
+
+    def test_middleware_authentication_required(self):
+        with self.settings(MIDDLEWARE_DEBUG=False):
+            profile_url = reverse('session_manager_profile')
+            result_request = self.client.get(profile_url, follow=True)
+            self.assertMessageInContext(
+                result_request,
+                'You must be authenticated to access this page. Please log in.'
+            )
+
+    def test_authenticated_user_passes_middelware(self):
+        user_data = {
+            'username_or_email': 'test@example.com',
+            'username': 'tester',
+            'password': 't3st3r@dmin'
+        }
+        user = self._create_user(**user_data)
+        post_data = {
+            'username_or_email': 'test@example.com',
+            'password': 't3st3r@dmin'
+        }
+        profile_url = reverse('session_manager_profile')
+        with self.settings(MIDDLEWARE_DEBUG=False):
+            login_request = self.client.post(self.login_url, post_data, follow=True)
+            result_request = self.client.get(profile_url, follow=True)
+            self.assertEqual(
+                result_request.request['PATH_INFO'],
+                profile_url
+            )
+            self.assertEqual(result_request.status_code, 200)
+
+
 class TestRegistrationFlow(SessionManagerTestCase):
     """ Test cases for form based registration
     """
