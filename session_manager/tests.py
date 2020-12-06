@@ -47,6 +47,9 @@ class SessionManagerTestCase(TestCase):
             user.save()
         return user
 
+    def _login_user(self, post_data, follow=True):
+        return self.client.post(self.login_url, post_data, follow=follow)
+
 
 class MiddlewareTestCase(SessionManagerTestCase):
     def test_middleware_404(self):
@@ -77,13 +80,9 @@ class MiddlewareTestCase(SessionManagerTestCase):
             'password': 't3st3r@dmin'
         }
         user = self._create_user(**user_data)
-        post_data = {
-            'username_or_email': 'test@example.com',
-            'password': 't3st3r@dmin'
-        }
+        self._login_user(user_data)
         profile_url = reverse('session_manager_profile')
         with self.settings(MIDDLEWARE_DEBUG=False):
-            login_request = self.client.post(self.login_url, post_data, follow=True)
             result_request = self.client.get(profile_url, follow=True)
             self.assertEqual(
                 result_request.request['PATH_INFO'],
@@ -235,7 +234,7 @@ class TestLoginFlow(SessionManagerTestCase):
             'password': 't3st3r@dmin'
         }
         self._create_user(**post_data)
-        login_request = self.client.post(self.login_url, post_data, follow=True)
+        login_request = self._login_user(post_data)
         self.assertEqual(login_request.status_code, 200)
         self.assertMessageInContext(login_request, 'Log in successful.')
 
@@ -246,7 +245,7 @@ class TestLoginFlow(SessionManagerTestCase):
             'username_or_email': 'test@example.com',
             'password': 't3st3r@dmin'
         }
-        login_request = self.client.post(self.login_url, post_data, follow=True)
+        login_request = self._login_user(post_data)
         self.assertEqual(login_request.status_code, 200)
         self.assertMessageInContext(login_request, 'User matching email does not exist.')
 
@@ -259,7 +258,7 @@ class TestLoginFlow(SessionManagerTestCase):
         }
         self._create_user(**post_data)
         post_data['password'] = 'badpassword'
-        login_request = self.client.post(self.login_url, post_data, follow=True)
+        login_request = self._login_user(post_data)
         self.assertEqual(login_request.status_code, 200)
         self.assertMessageInContext(login_request, 'Password incorrect.')
 
@@ -275,7 +274,7 @@ class TestResetPasswordFromProfile(SessionManagerTestCase):
             'password': 't3st3r@dmin'
         }
         user = self._create_user(**user_data)
-        self.client.post(self.login_url, user_data, follow=True)
+        self._login_user(user_data)
 
         new_password = 't3st3r@dminnewpass'
         reset_request = self.client.post(
@@ -291,7 +290,7 @@ class TestResetPasswordFromProfile(SessionManagerTestCase):
             'username_or_email': 'test@example.com',
             'password': new_password
         }
-        login_request = self.client.post(self.login_url, user_data, follow=True)
+        login_request = self._login_user(user_data)
         self.assertMessageInContext(login_request, 'Log in successful.')
 
 
@@ -380,7 +379,7 @@ class TestTokenPasswordReset(SessionManagerTestCase):
             'username_or_email': 'test@example.com',
             'password': post_data['password']
         }
-        login_request = self.client.post(self.login_url, user_data, follow=True)
+        login_request = self._login_user(user_data)
         self.assertMessageInContext(login_request, 'Log in successful.')
 
     def test_password_reset_bad_token(self):
