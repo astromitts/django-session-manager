@@ -39,13 +39,15 @@ def session_request_validation(get_response):
 
         except Resolver404:
             if not settings.MIDDLEWARE_DEBUG:
-                error_message = 'Page not found'
+                error_message = 'Page not found.'
                 status_code = 404
 
         response = get_response(request)
         status_code = str(response.status_code)
 
-        if status_code.startswith('5') or status_code.startswith('4'):
+        if response.status_code == 404:
+            error_message = 'Page not found.'
+        elif status_code.startswith('5') or status_code.startswith('4'):
             error_message = 'An unknown error occurred.'
 
         if error_message and not settings.MIDDLEWARE_DEBUG:
