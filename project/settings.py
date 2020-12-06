@@ -139,4 +139,3 @@ PW_RESET_SUCCESS_REDIRECT = 'session_manager_profile'
 DEFAULT_ERROR_TEMPLATE = 'session_manager/error.html'
 
 HOST = '127.0.0.1:8000'
-CRISPY_TEMPLATE_PACK = 'bootstrap3'
