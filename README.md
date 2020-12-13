@@ -28,11 +28,13 @@ Handler for sending emails via SendGrid. This app enforces a
 registration flow that looks like:
 	1) Submit your email address
 	2) Back-end creates and saves a User object for that email
-	3) Back-end sends an email to given email address containing
+	3) Back-end sends an email* to given email address containing
 	   a valid registration token embedded in a link
 	4) User clicks the link
 	5) Back-end validates link - if valid, presents registration form
 	6) User completes registration form is allowed to log in
+
+\*The template for this email is in templates/session_manager/emails
 
 For development and testing purposes, there is an EmailLog model
 which you can use to bypass sending actual emails and just check
