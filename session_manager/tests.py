@@ -244,14 +244,16 @@ class TestLoginFlow(SessionManagerTestCase):
     def test_login_happy_path(self):
         """ Verify a user can log in with the correct email and password
         """
-        post_data = {
-            'username_or_email': 'test@example.com',
-            'password': 't3st3r@dmin'
-        }
-        self._create_user(**post_data)
-        login_request = self._login_user(post_data)
-        self.assertEqual(login_request.status_code, 200)
-        self.assertMessageInContext(login_request, 'Log in successful.')
+        with self.settings(DISPLAY_AUTH_SUCCESS_MESSAGES=True):
+            post_data = {
+                'username_or_email': 'test@example.com',
+                'password': 't3st3r@dmin'
+            }
+            self._create_user(**post_data)
+            login_request = self._login_user(post_data)
+            self.assertEqual(login_request.status_code, 200)
+
+            self.assertMessageInContext(login_request, 'Log in successful.')
 
     def test_login_no_user(self):
         """ Verify correct log in error message when given email does not exist
@@ -310,18 +312,20 @@ class TestTokenLogin(SessionManagerTestCase):
     def test_login_with_token_happy_path(self):
         """ Verify log in with token when valid token and username given in URL
         """
-        user_data = {
-            'username_or_email': 'test@example.com',
-            'password': 't3st3r@dmin'
-        }
-        user = self._create_user(**user_data)
-        user_token = UserToken(user=user, token_type='login')
-        user_token.save()
-        token_str = user_token.token
-        login_request = self.client.get(user_token.path, follow=True)
-        self.assertMessageInContext(login_request, 'Log in successful.')
-        user_token = UserToken.objects.filter(token=token_str)
-        self.assertFalse(user_token.exists())
+
+        with self.settings(DISPLAY_AUTH_SUCCESS_MESSAGES=True):
+            user_data = {
+                'username_or_email': 'test@example.com',
+                'password': 't3st3r@dmin'
+            }
+            user = self._create_user(**user_data)
+            user_token = UserToken(user=user, token_type='login')
+            user_token.save()
+            token_str = user_token.token
+            login_request = self.client.get(user_token.path, follow=True)
+            self.assertMessageInContext(login_request, 'Log in successful.')
+            user_token = UserToken.objects.filter(token=token_str)
+            self.assertFalse(user_token.exists())
 
     def test_login_with_token_user_not_found(self):
         """ Verify correct log in token error message when bad username given in URL
@@ -369,29 +373,30 @@ class TestTokenPasswordReset(SessionManagerTestCase):
     def test_password_reset_happy_path(self):
         """ Verify password reset with correct token and user works
         """
-        user_data = {
-            'username_or_email': 'test@example.com',
-            'username': 'testuser',
-            'password': 't3st3r@dmin'
-        }
-        user = self._create_user(**user_data)
-        user_token = UserToken(user=user, token_type='reset')
-        user_token.save()
-        reset_request = self.client.get(user_token.path, follow=True)
-        self.assertIn('form', str(reset_request.content))
-        post_data = {
-            'user_id': user.pk,
-            'password': 't3st3r@dminnewpass',
-            'confirm_password': 't3st3r@dminnewpass'
-        }
-        reset_request = self.client.post(user_token.path, post_data, follow=True)
-        self.assertMessageInContext(reset_request, 'Password reset. Please log in to continue.')
-        user_data = {
-            'username_or_email': 'test@example.com',
-            'password': post_data['password']
-        }
-        login_request = self._login_user(user_data)
-        self.assertMessageInContext(login_request, 'Log in successful.')
+        with self.settings(DISPLAY_AUTH_SUCCESS_MESSAGES=True):
+            user_data = {
+                'username_or_email': 'test@example.com',
+                'username': 'testuser',
+                'password': 't3st3r@dmin'
+            }
+            user = self._create_user(**user_data)
+            user_token = UserToken(user=user, token_type='reset')
+            user_token.save()
+            reset_request = self.client.get(user_token.path, follow=True)
+            self.assertIn('form', str(reset_request.content))
+            post_data = {
+                'user_id': user.pk,
+                'password': 't3st3r@dminnewpass',
+                'confirm_password': 't3st3r@dminnewpass'
+            }
+            reset_request = self.client.post(user_token.path, post_data, follow=True)
+            self.assertMessageInContext(reset_request, 'Password reset. Please log in to continue.')
+            user_data = {
+                'username_or_email': 'test@example.com',
+                'password': post_data['password']
+            }
+            login_request = self._login_user(user_data)
+            self.assertMessageInContext(login_request, 'Log in successful.')
 
     def test_password_reset_bad_token(self):
         """ Verify correct error token password reset error message with bad token

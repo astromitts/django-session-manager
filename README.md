@@ -6,8 +6,8 @@ Django project that requires user authentication.
 It can generate login tokens for passwordless logins 
 and password reset tokens. 
 
-It does not include any email functionality for automated
-support emails for login or reset tokens.
+It relies on Send Grid to send emails to users giving
+them registration or login credentials.
 
 Extend or override the template files to customize.
 
@@ -15,6 +15,42 @@ Extend or override the template files to customize.
 LOGIN_SUCCESS_REDIRECT (String)
 urls.py path name of the view to redirect users to after
 successful log in
+
+APP_NAME (String)
+Just for displaying in email output
+
+DISPLAY_AUTH_SUCCESS_MESSAGES (Boolean)
+Personal preference here - if you want Django success messages
+added to templates on successful login (required for tests)
+
+## SessionManagerEmailer
+Handler for sending emails via SendGrid. This app enforces a
+registration flow that looks like:
+	1) Submit your email address
+	2) Back-end creates and saves a User object for that email
+	3) Back-end sends an email to given email address containing
+	   a valid registration token embedded in a link
+	4) User clicks the link
+	5) Back-end validates link - if valid, presents registration form
+	6) User completes registration form is allowed to log in
+
+For development and testing purposes, there is an EmailLog model
+which you can use to bypass sending actual emails and just check
+the content and settings of emails that would otherwise be sent.
+
+### Settings
+LOG_EMAILS (Boolean)
+Turn on/off to log emails either in place of or along with sending
+actual emails.
+
+SEND_EMAILS (Boolean)
+Turn on to enable sending emails via Send Grid
+
+EMAILS_FROM (String)
+The from email address for your app
+
+SENDGRID_API_KEY (String)
+Valid API key for an verified sender in Send Grid
 
 
 ## Middleware
@@ -42,4 +78,4 @@ users to when they attempt to access a restricted page
 ## Tests
 
 All view logic should be covered via tests.py, to run:
-`python manage.py test --settings=project.test_settings`
+`python manage.py test`
