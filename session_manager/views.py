@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout, REDIRECT_FIELD_NAME
 from django.contrib.auth.views import redirect_to_login
+from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, resolve_url
@@ -11,7 +12,17 @@ from django.urls import reverse
 
 from urllib.parse import urlparse
 
-from session_manager.forms import CreateUserForm, LoginUserForm, ResetPasswordForm
+from session_manager.forms import (
+    CreateUserForm,
+    LoginEmailForm,
+    LoginPasswordForm,
+    RegistrationLinkForm,
+    ResetPasswordForm,
+    UserProfileForm,
+    validate_email,
+)
+
+from session_manager.mailer import SessionManagerEmailer
 from session_manager.models import SessionManager, UserToken
 
 
@@ -24,30 +35,67 @@ class CreateUserView(View):
         self.context = {}
 
     def get(self, request, *args, **kwargs):
-        form = CreateUserForm()
+        if request.GET.get('token') and request.GET.get('user'):
+            registration_token, token_error_message = UserToken.get_token(
+                token=request.GET['token'],
+                username=request.GET['user'],
+                token_type='registration'
+            )
+            if not registration_token:
+                messages.error(request, token_error_message)
+                return redirect(reverse('session_manager_login'))
+            elif not registration_token.is_valid:
+                registration_token.delete()
+                messages.error(request, 'Registration link invalid or expired')
+                return redirect(reverse('session_manager_login'))
+            else:
+                form = CreateUserForm(initial={'email': registration_token.user.email})
+        else:
+            form = LoginEmailForm()
         self.context.update({
             'form': form,
         })
         return HttpResponse(self.template.render(self.context, request))
 
     def post(self, request, *args, **kwargs):
-        form = CreateUserForm(request.POST)
-        if form.is_valid():
-            if SessionManager.user_exists(email=request.POST['email']):
-                messages.error(request, 'A user with this email address already exists.')
+        if 'password' in request.POST:
+            form = CreateUserForm(request.POST)
+            if form.is_valid():
+                user = SessionManager.get_user_by_username(request.POST['email'])
+                SessionManager.register_user(
+                    user,
+                    password=request.POST['password'],
+                    first_name=request.POST['first_name'],
+                    last_name=request.POST['last_name']
+                )
+                messages.success(request, 'Registration complete! Please log in to continue.')
+                UserToken.objects.filter(user=user, token_type='registration').all().delete()
+                return redirect(reverse('session_manager_login'))
+            else:
                 self.context.update({
                     'form': form,
                 })
                 return HttpResponse(self.template.render(self.context, request))
-            else:
-                user = SessionManager.create_user(
-                    email=request.POST['email'],
-                    username=request.POST['username'],
-                    password=request.POST['password']
-                )
-                messages.success(request, 'Registration complete! Please log in to continue.')
-                return redirect(reverse('session_manager_login'))
         else:
+            form = LoginEmailForm(request.POST)
+            if form.is_valid():
+                email_error = validate_email(request.POST['email'], 0)
+                if email_error:
+                    error = '{}<p>Did you mean to <a href="{}">log in instead</a>?'.format(
+                        email_error, reverse('session_manager_login')
+                    )
+                    messages.error(request, error)
+                else:
+                    user = SessionManager.get_user_by_username(request.POST['email'])
+                    if not user:
+                        user = SessionManager.create_user(request.POST['email'])
+                    UserToken.clean(user=user, token_type='registration')
+                    token = UserToken(user=user, token_type='registration')
+                    token._generate_login_token()
+                    token.save()
+                    SessionManagerEmailer.send_app_registration_link(user, token)
+                    messages.success(request, 'Thanks! To verify your email address, we have sent you a link to complete your registration.')
+                    return HttpResponse(self.template.render(self.context, request))
             self.context.update({
                 'form': form,
             })
@@ -71,9 +119,10 @@ class LoginUserView(View):
                 if token.is_valid:
                     # a valid token/user combination was given, so log in and delete the token
                     login(request, token.user)
-                    messages.success(request, 'Log in successful.')
                     token.delete()
                     request.session['user_is_authenticated'] = True
+                    if settings.DISPLAY_AUTH_SUCCESS_MESSAGES:
+                        messages.success(request, 'Log in successful.')
                     return redirect(reverse(settings.LOGIN_SUCCESS_REDIRECT))
                 else:
                     # provided token was found, but it is expired
@@ -85,7 +134,7 @@ class LoginUserView(View):
                 messages.error(request, token_error_message)
 
         # no token was provided, or it was invalid, so just render the login form
-        form = LoginUserForm()
+        form = LoginEmailForm()
         self.context.update({
             'form': form,
         })
@@ -94,32 +143,75 @@ class LoginUserView(View):
     def post(self, request, *args, **kwargs):
         # we should only get here if they submitted the form instead of a token in the URL
         # standard Django form handling here
-        form = LoginUserForm(request.POST)
-        if form.is_valid():
-            user, error_reason = SessionManager.check_user_login(
-                username_or_email=request.POST['username_or_email'],
-                password=request.POST['password']
-            )
-            if not user:
-                messages.error(request, error_reason)
+        if 'password' not in request.POST:
+            form = LoginEmailForm(request.POST)
+            if form.is_valid():
+                user = SessionManager.get_user_by_username(request.POST['email'])
+                if not user:
+                    messages.error(request, 'Could not find account with that email address.')
+                elif not user.password:
+                    messages.error(request, "It looks like you haven't registered yet.")
+                    self.context.update({
+                        'form': RegistrationLinkForm(initial={'email': user.email}),
+                        'submit_text': 'Send Registration Link',
+                        'form_action': reverse('session_manager_send_registration_link')
+                    })
+                    return HttpResponse(self.template.render(self.context, request))
+                else:
+                    self.context['form'] = LoginPasswordForm(initial={'email': user.email})
+                    return HttpResponse(self.template.render(self.context, request))
+            else:
+                messages.error(request, 'Something went wrong. Please correct errors below.')
                 self.context.update({
                     'form': form,
                 })
                 return HttpResponse(self.template.render(self.context, request))
-            else:
-                login(request, user)
-                messages.success(request, 'Log in successful.')
-                request.session['user_is_authenticated'] = True
-                if request.session.get('login_redirect_from'):
-                    return redirect(request.session.get('login_redirect_from'))
-                else:
-                    return redirect(reverse(settings.LOGIN_SUCCESS_REDIRECT))
         else:
-            messages.error(request, 'Something went wrong. Please correct errors below.')
-            self.context.update({
-                'form': form,
-            })
-            return HttpResponse(self.template.render(self.context, request))
+            form = LoginPasswordForm(request.POST)
+            if form.is_valid():
+                user, error_reason = SessionManager.check_user_login(
+                    username_or_email=request.POST['email'],
+                    password=request.POST['password']
+                )
+                if not user:
+                    messages.error(request, error_reason)
+                    self.context.update({
+                        'form': form,
+                    })
+                    return HttpResponse(self.template.render(self.context, request))
+                else:
+                    login(request, user)
+                    request.session['user_is_authenticated'] = True
+                    if settings.DISPLAY_AUTH_SUCCESS_MESSAGES:
+                        messages.success(request, 'Log in successful.')
+                    return redirect(reverse(settings.LOGIN_SUCCESS_REDIRECT))
+        return HttpResponse(self.template.render(self.context, request))
+
+
+class SendRegistrationLink(View):
+    def post(self, request, *args, **kwargs):
+        form = RegistrationLinkForm(request.POST)
+        if form.is_valid():
+            user = SessionManager.get_user_by_username(request.POST['email'])
+            UserToken.clean(
+                token_type='registration',
+                user=user
+            )
+            registration_token = UserToken(
+                token_type='registration',
+                user=user
+            )
+            registration_token._generate_login_token()
+            registration_token.save()
+            SessionManagerEmailer.send_app_registration_link(user, registration_token)
+            messages.success(
+                request,
+                'A registration link was sent to {}. Use the provided link to complete registration.'.format(registration_token.user.email)
+            )
+        else:
+            messages.error(request, 'Could not validate request.')
+        return redirect(reverse('session_manager_login'))
+
 
 
 class ResetPasswordWithTokenView(View):
@@ -191,7 +283,7 @@ class ResetPasswordFromProfileView(View):
     def post(self, request, *args, **kwargs):
         form = ResetPasswordForm(request.POST)
         if form.is_valid():
-            user = self.request.user
+            user = User.objects.get(pk=request.POST['user_id'])
             user.set_password(request.POST['password'])
             user.save()
             messages.success(request, 'Your password has been reset. Please log in again to continue.')
@@ -211,6 +303,37 @@ class LogOutUserView(View):
 class Index(View):
     def get(self, request, *args, **kwargs):
         template = loader.get_template('session_manager/index.html')
-        return HttpResponse(template.render({}, request))
+        if not self.request.user.is_anonymous:
+            initial={
+                'username': self.request.user.username,
+                'email': self.request.user.email,
+                'first_name': self.request.user.first_name,
+                'last_name': self.request.user.last_name,
+                'user_id': self.request.user.pk,
+            }
+        else:
+            initial = {}
+        form = UserProfileForm(initial=initial)
+        context = {
+            'form': form,
+        }
+        return HttpResponse(template.render(context, request))
 
+    def post(self, request, *args, **kwargs):
+        template = loader.get_template('session_manager/index.html')
+        form = UserProfileForm(request.POST)
 
+        if form.is_valid():
+            user = User.objects.get(pk=self.request.user.pk)
+            user.username = request.POST['username']
+            user.email = request.POST['email']
+            user.first_name = request.POST['first_name']
+            user.last_name = request.POST['last_name']
+            user.save()
+            messages.success(request, 'Profile updated.')
+            return redirect(reverse('session_manager_profile'))
+        else:
+            context = {
+                'form': form,
+            }
+            return HttpResponse(template.render(context, request))

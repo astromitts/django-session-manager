@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
+from django.db.models import Q
+
 from django.urls import reverse
 
 from datetime import datetime, timedelta
@@ -33,22 +35,67 @@ class SessionManager(models.Model):
         return User.objects.filter(username__iexact=username).first()
 
     @classmethod
+    def search(cls, email):
+        """ Retrieve User if one with a matching email exists
+        """
+        return User.objects.filter(email__icontains=email).all()
+
+    @classmethod
+    def full_search(cls, search_term):
+        """ Retrieve User if one with a matching username exists
+        """
+        filter_qs = User.objects
+        if '@' in search_term:
+            filter_qs = filter_qs.filter(email__icontains=search_term)
+        elif ' ' in search_term:
+            search_names = search_term.split(' ')
+            first_name = search_names[0]
+            last_name = ' '.join(search_names[1:])
+            filter_qs = filter_qs.filter(
+                Q(first_name__icontains=first_name)|
+                Q(last_name__icontains=last_name)
+            )
+        else:
+            filter_qs = filter_qs.filter(
+                Q(first_name__icontains=search_term)|
+                Q(last_name__icontains=search_term)
+            )
+        return filter_qs.all()
+
+    @classmethod
     def get_user_by_id(cls, pk):
         """ Get the User of given primary key
         """
         return User.objects.get(pk=pk)
 
     @classmethod
-    def create_user(cls, email, username, password):
+    def register_user(cls, user, first_name=' ', last_name=' ', password=None):
+        """ Create a new User instance, set the password and return the User object
+        """
+        user.username = user.email
+        user.first_name = first_name
+        user.last_name = last_name
+
+        user.save()
+        if password:
+            user.set_password(password)
+            user.save()
+        return user
+
+    @classmethod
+    def create_user(cls, email, first_name=' ', last_name=' ', password=None):
         """ Create a new User instance, set the password and return the User object
         """
         new_user = User(
             email=email,
-            username=username,
+            username=email,
+            first_name=first_name,
+            last_name=last_name,
         )
         new_user.save()
-        new_user.set_password(password)
-        new_user.save()
+        if password:
+            new_user.set_password(password)
+            new_user.save()
         return new_user
 
     @classmethod
@@ -66,6 +113,8 @@ class SessionManager(models.Model):
             user = User.objects.filter(username__iexact=username_or_email).first()
         if not user:
             return (None, 'User matching email does not exist.')
+        if not user.password:
+            return (None, 'User needs to set password.')
         else:
             if user.check_password(password):
                 return (user, None)
@@ -81,14 +130,18 @@ class UserToken(models.Model):
     token = models.CharField(max_length=64, blank=True)
     token_type = models.CharField(
         max_length=20,
-        unique=True,
         choices=(
             ('reset', 'reset'),
             ('login', 'login'),
+            ('registration', 'registration'),
 
         )
     )
     expiration = models.DateTimeField(blank=True, default=twentyfourhoursfromnow)
+
+    @classmethod
+    def clean(cls, user, token_type):
+        cls.objects.filter(user=user, token_type=token_type).all().delete()
 
     def _generate_login_token(self):
         """ Helper function to generate unique tokens
@@ -114,6 +167,8 @@ class UserToken(models.Model):
         """
         if self.token_type == 'login':
             return '{}?token={}&user={}'.format(reverse('session_manager_login'), self.token, self.user.username)
+        elif self.token_type == 'registration':
+            return '{}?token={}&user={}'.format(reverse('session_manager_register'), self.token, self.user.username)
         else:
             return '{}?token={}&user={}'.format(reverse('session_manager_token_reset_password'), self.token, self.user.username)
 
@@ -150,3 +205,18 @@ class UserToken(models.Model):
             return True
         else:
             return False
+
+
+class EmailLog(models.Model):
+    email_type = models.CharField(max_length=50)
+    to_email = models.EmailField()
+    from_email = models.EmailField()
+    subject = models.CharField(max_length=300)
+    body = models.TextField()
+
+    def __str__(self):
+        return '<EmailLog {}: type "{}" to "{}">'.format(
+            self.pk,
+            self.email_type,
+            self.to_email
+        )

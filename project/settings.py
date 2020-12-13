@@ -130,12 +130,23 @@ AUTHENTICATION_EXEMPT_VIEWS = [
     'resetpassword',
 ]
 
-MIDDLEWARE_DEBUG = False
+MIDDLEWARE_DEBUG = True
 
 # override these to redirect to customized templates
 AUTHENTICATION_REQUIRED_REDIRECT = 'session_manager_login'
 LOGIN_SUCCESS_REDIRECT = 'session_manager_profile'
 PW_RESET_SUCCESS_REDIRECT = 'session_manager_profile'
 DEFAULT_ERROR_TEMPLATE = 'session_manager/error.html'
+
+# display settings
+APP_NAME = 'Django Session Manager'
+DISPLAY_AUTH_SUCCESS_MESSAGES = True
+
+# email settings
+LOG_EMAILS = True
+SEND_EMAILS = False
+EMAILS_FROM = 'admin@example.com'
+SENDGRID_API_KEY = None
+
 
 HOST = '127.0.0.1:8000'

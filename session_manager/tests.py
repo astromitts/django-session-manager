@@ -33,7 +33,7 @@ class SessionManagerTestCase(TestCase):
         error_list = content.find('ul', {'class': 'errorlist nonfield'})
         self.assertIn(message_text, error_list.text)
 
-    def _create_user(self, username_or_email, username=None, password=None):
+    def _create_user(self, username_or_email, username=None, password=None, confirm_password=None):
         """ Helper function to make a user and return it
         """
         user = User(email=username_or_email)
@@ -48,6 +48,8 @@ class SessionManagerTestCase(TestCase):
         return user
 
     def _login_user(self, post_data, follow=True):
+        if 'username_or_email' in post_data and 'email' not in post_data:
+            post_data['email'] = post_data['username_or_email']
         return self.client.post(self.login_url, post_data, follow=follow)
 
 
@@ -100,39 +102,43 @@ class TestRegistrationFlow(SessionManagerTestCase):
         register_get = self.client.get(self.register_url)
         self.assertEqual(register_get.status_code, 200)
 
-        post_data = {
+        post_data_page_1 = {
             'email': 'test@example.com',
-            'username': 'tester',
-            'password': 't3st3r@dmin'
+        }
+        post_data_page_2 = {
+            'email': 'test@example.com',
+            'first_name': 'Bo',
+            'last_name': 'Morin',
+            'password': 't3st3r@dmin',
+            'confirm_password': 't3st3r@dmin',
         }
 
-        register_post = self.client.post(self.register_url, post_data, follow=True)
-        self.assertEqual(register_post.status_code, 200)
-        self.assertMessageInContext(register_post, 'Registration complete! Please log in to continue.')
+        register_page_1 = self.client.post(self.register_url, post_data_page_1, follow=True)
+        self.assertMessageInContext(register_page_1, 'Thanks! To verify your email address, we have sent you a link to complete your registration.')
 
-        new_user = User.objects.get(email=post_data['email'])
-        self.assertEqual(new_user.username, post_data['username'])
-        self.assertTrue(new_user.check_password(post_data['password']))
+        register_page_2 = self.client.post(self.register_url, post_data_page_2, follow=True)
+        self.assertMessageInContext(register_page_2, 'Registration complete! Please log in to continue.')
+
+        new_user = User.objects.get(email=post_data_page_2['email'])
+        self.assertEqual(new_user.username, post_data_page_2['email'])
+        self.assertTrue(new_user.check_password(post_data_page_2['password']))
 
     def test_username_already_exists(self):
         """ Verify the correct registration error message when a username already exists
         """
         existing_user_data = {
             'username_or_email': 'test@example.com',
-            'username': 'tester',
-            'password': 't3st3r@dmin'
+            'password': 't3st3r@dmin',
+            'confirm_password': 't3st3r@dmin',
         }
         self._create_user(**existing_user_data)
 
         post_data = {
-            'username_or_email': 'different@example.com',
-            'username': 'tester',
-            'password': 't4st4r@dmin'
+            'email': existing_user_data['username_or_email'],
         }
 
         register_post = self.client.post(self.register_url, post_data)
-        self.assertEqual(register_post.status_code, 200)
-        self.assertNonFieldFormError(register_post, 'A user with this username already exists.')
+        self.assertMessageInContext(register_post, 'Invalid email: <ul><li>Email address already in use by another account.</li></ul><p>Did you mean to <a href="/login/">log in instead</a>?')
 
     def test_password_requirements(self):
         """ Verify the correct registration error message when a username already exists
@@ -147,7 +153,8 @@ class TestRegistrationFlow(SessionManagerTestCase):
                 'post_data': {
                     'email': 'different@example.com',
                     'username': 'tester',
-                    'password': 't1$'
+                    'password': 't1$',
+                    'confirm_password': 't1$',
                 },
                 'expected_errors': [min_length, ]
             },
@@ -155,7 +162,8 @@ class TestRegistrationFlow(SessionManagerTestCase):
                 'post_data': {
                     'email': 'different@example.com',
                     'username': 'tester',
-                    'password': 'tt$'
+                    'password': 'tt$',
+                    'confirm_password': 'tt$',
                 },
                 'expected_errors': [min_length, must_contain_number]
             },
@@ -163,7 +171,8 @@ class TestRegistrationFlow(SessionManagerTestCase):
                 'post_data': {
                     'email': 'different@example.com',
                     'username': 'tester',
-                    'password': 'tt1'
+                    'password': 'tt1',
+                    'confirm_password': 'tt1',
                 },
                 'expected_errors': [min_length, must_contain_special]
             },
@@ -171,7 +180,8 @@ class TestRegistrationFlow(SessionManagerTestCase):
                 'post_data': {
                     'email': 'different@example.com',
                     'username': 'tester',
-                    'password': '$$1'
+                    'password': '$$1',
+                    'confirm_password': '$$1',
                 },
                 'expected_errors': [min_length, must_contain_letter]
             },
@@ -179,7 +189,8 @@ class TestRegistrationFlow(SessionManagerTestCase):
                 'post_data': {
                     'email': 'different@example.com',
                     'username': 'tester',
-                    'password': 'tttttttt'
+                    'password': 'tttttttt',
+                    'confirm_password': 'v',
                 },
                 'expected_errors': [must_contain_special, must_contain_number]
             },
@@ -187,7 +198,8 @@ class TestRegistrationFlow(SessionManagerTestCase):
                 'post_data': {
                     'email': 'different@example.com',
                     'username': 'tester',
-                    'password': '1111111111'
+                    'password': '1111111111',
+                    'confirm_password': '1111111111',
                 },
                 'expected_errors': [must_contain_special, must_contain_letter]
             },
@@ -195,7 +207,8 @@ class TestRegistrationFlow(SessionManagerTestCase):
                 'post_data': {
                     'email': 'different@example.com',
                     'username': 'tester',
-                    'password': '##########'
+                    'password': '##########',
+                    'confirm_password': '##########',
                 },
                 'expected_errors': [must_contain_number, must_contain_letter]
             },
@@ -203,7 +216,8 @@ class TestRegistrationFlow(SessionManagerTestCase):
                 'post_data': {
                     'email': 'different@example.com',
                     'username': 'tester',
-                    'password': '#########1'
+                    'password': '#########1',
+                    'confirm_password': '#########1',
                 },
                 'expected_errors': [must_contain_letter]
             },
@@ -211,7 +225,8 @@ class TestRegistrationFlow(SessionManagerTestCase):
                 'post_data': {
                     'email': 'different@example.com',
                     'username': 'tester',
-                    'password': '#########a'
+                    'password': '#########a',
+                    'confirm_password': '#########a',
                 },
                 'expected_errors': [must_contain_number]
             },
@@ -271,27 +286,22 @@ class TestResetPasswordFromProfile(SessionManagerTestCase):
         """
         user_data = {
             'username_or_email': 'test@example.com',
-            'password': 't3st3r@dmin'
+            'password': 't3st3r@dmin',
+            'confirm_password': 't3st3r@dmin',
         }
         user = self._create_user(**user_data)
         self._login_user(user_data)
-
         new_password = 't3st3r@dminnewpass'
         reset_request = self.client.post(
             self.password_reset_url,
             {
                 'user_id': user.pk,
-                'password': new_password
+                'password': new_password,
+                'confirm_password': new_password,
             },
             follow=True
         )
         self.assertMessageInContext(reset_request, 'Your password has been reset. Please log in again to continue.')
-        user_data = {
-            'username_or_email': 'test@example.com',
-            'password': new_password
-        }
-        login_request = self._login_user(user_data)
-        self.assertMessageInContext(login_request, 'Log in successful.')
 
 
 class TestTokenLogin(SessionManagerTestCase):
@@ -371,7 +381,8 @@ class TestTokenPasswordReset(SessionManagerTestCase):
         self.assertIn('form', str(reset_request.content))
         post_data = {
             'user_id': user.pk,
-            'password': 't3st3r@dminnewpass'
+            'password': 't3st3r@dminnewpass',
+            'confirm_password': 't3st3r@dminnewpass'
         }
         reset_request = self.client.post(user_token.path, post_data, follow=True)
         self.assertMessageInContext(reset_request, 'Password reset. Please log in to continue.')
@@ -393,7 +404,7 @@ class TestTokenPasswordReset(SessionManagerTestCase):
         user = self._create_user(**user_data)
         user_token = UserToken(user=user, token_type='reset')
         user_token.save()
-        reset_request = self.client.post(user_token.path.replace(user_token.token, 'asdf'), follow=True)
+        reset_request = self.client.get(user_token.path.replace(user_token.token, 'asdf'), follow=True)
         self.assertMessageInContext(reset_request, 'Token not found.')
 
     def test_password_reset_bad_user(self):
@@ -411,9 +422,9 @@ class TestTokenPasswordReset(SessionManagerTestCase):
         self.assertIn('form', str(reset_request.content))
         post_data = {
             'user_id': user.pk,
-            'password': 't3st3r@dminnewpass'
+            'password': 't3st3r@dminnewpass',
         }
-        reset_request = self.client.post(user_token.path.replace(user_token.user.username, 'asdf'), post_data, follow=True)
+        reset_request = self.client.get(user_token.path.replace(user_token.user.username, 'asdf'), post_data, follow=True)
         self.assertMessageInContext(reset_request, 'User matching username not found.')
 
     def test_password_reset_expired(self):
@@ -427,7 +438,5 @@ class TestTokenPasswordReset(SessionManagerTestCase):
         user = self._create_user(**user_data)
         user_token = UserToken(user=user, token_type='reset', expiration=yesterday())
         user_token.save()
-        reset_request = self.client.post(user_token.path, follow=True)
+        reset_request = self.client.get(user_token.path, follow=True)
         self.assertMessageInContext(reset_request, 'Token is expired.')
-
-
