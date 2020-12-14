@@ -19,7 +19,7 @@ successful log in
 **APP_NAME** (String)
 Display for your app name in email output and templates
 
-DISPLAY_AUTH_SUCCESS_MESSAGES (Boolean)
+**DISPLAY_AUTH_SUCCESS_MESSAGES** (Boolean)
 Personal preference here - if you want Django success messages
 added to templates on successful login (required for tests)
 
