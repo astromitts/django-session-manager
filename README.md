@@ -112,10 +112,12 @@ When False, users will be prompted to submit a separate username on
 registration and be able to change it in the user profile form later.
 
 **MAKE_USERNAME_EMAIL = True**
+
 ![profile with username as email](https://raw.githubusercontent.com/astromitts/django-session-manager/main/screenshots/email-as-username.png)
 
 
 **MAKE_USERNAME_EMAIL = False**
+
 ![profile with different username](https://raw.githubusercontent.com/astromitts/django-session-manager/main/screenshots/independent-username.png)
 
 

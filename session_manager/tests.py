@@ -97,7 +97,7 @@ class TestRegistrationFlow(SessionManagerTestCase):
     """ Test cases for form based registration
     """
     def test_register_user_happy_path_no_username(self):
-        """ Verify a user can register when they provide all the correct data
+        """ Verify a user can register when they provide all the correct data settings.MAKE_USERNAME_EMAIL = True
         """
 
         with self.settings(MAKE_USERNAME_EMAIL=True):
@@ -109,6 +109,7 @@ class TestRegistrationFlow(SessionManagerTestCase):
             }
             post_data_page_2 = {
                 'email': 'test@example.com',
+                'username': 'test-user',
                 'first_name': 'Bo',
                 'last_name': 'Morin',
                 'password': 't3st3r@dmin',
@@ -126,7 +127,7 @@ class TestRegistrationFlow(SessionManagerTestCase):
             self.assertTrue(new_user.check_password(post_data_page_2['password']))
 
     def test_register_user_happy_path_with_username(self):
-        """ Verify a user can register when they provide all the correct data
+        """ Verify a user can register when they provide all the correct data with settings.MAKE_USERNAME_EMAIL = False
         """
 
         with self.settings(MAKE_USERNAME_EMAIL=False):
@@ -155,8 +156,8 @@ class TestRegistrationFlow(SessionManagerTestCase):
             self.assertEqual(new_user.username, post_data_page_2['username'])
             self.assertTrue(new_user.check_password(post_data_page_2['password']))
 
-    def test_username_already_exists(self):
-        """ Verify the correct registration error message when a username already exists
+    def test_email_already_exists(self):
+        """ Verify the correct registration error message when a email already exists
         """
         existing_user_data = {
             'username_or_email': 'test@example.com',
