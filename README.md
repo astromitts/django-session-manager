@@ -11,6 +11,78 @@ them registration or login credentials.
 
 Extend or override the template files to customize.
 
+# Usage
+
+## Installation
+**Requires**
+ - Pipenv
+ - Python3
+ - Sendgrid account and authenticated sender address with API key
+
+Start by clicking the "Use this template" button in Github at https://github.com/astromitts/django-session-manager
+
+Follow the Github instructions to get a new repository cloned on your machine.
+
+On your command line, run:
+
+```
+Pipenv install
+Pipenv shell
+python mange.py migrate
+python manage.py runserver
+```
+
+## User Registration
+In your browser, go to 127.0.0.1:8000
+
+You should be redirected to http://127.0.0.1:8000/login/ with a message stating
+that you must be logged in. To change the redirect route used by this function,
+see AUTHENTICATION_REQUIRED_REDIRECT under the Middleware section below. 
+
+![registration screen](screenshots/register-1.png)
+
+Start by clicking the "Register here" link.
+
+Type in an email address and submit.
+
+You should see a message indicating that an email has been sent to the address
+provided and a preview of what the email will look like. 
+
+![registration screen](screenshots/register-2.png)
+
+**Note** No emails are actually sent by default. This app requires you to create
+a sendgrid account with a valid API key for that to work. The purpose of the email
+preview is for ease of development and testing. See the SessionManagerEmailer details
+below for details.
+
+Follow the link in the email preview to complete the registration process:
+
+![registration screen](screenshots/register-3.png)
+
+**Note** Registration and login links are set to expire in 48 hours by default. If a
+user fails to use their registration link before it expires, they will be prompted to
+resend it next time they attempt to register or login with the same email address:
+
+![registration screen](screenshots/register-resend.png)
+
+
+## User Log In
+Once registered, a user can input their registered email address at /login/. The
+log in flow has two views - one prompting for an email address and the second prompting
+for a password:
+
+![registration screen](screenshots/login-1.png)
+![registration screen](screenshots/login-2.png)
+![registration screen](screenshots/login-success.png)
+
+
+## Password Resets
+Logged in users can reset their password via the URL path 'session_manager_profile_reset_password'
+
+Logged out users who need to reset a password can do so by clicking "Send a password reset link"
+button on the second login view. This works similarly to the registration link email.
+
+
 ### Settings
 **LOGIN_SUCCESS_REDIRECT** (String)
 urls.py path name of the view to redirect users to after
@@ -88,3 +160,4 @@ users to when they attempt to access a restricted page
 
 All view logic should be covered via tests.py, to run:
 `python manage.py test`
+

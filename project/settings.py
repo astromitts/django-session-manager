@@ -132,7 +132,7 @@ AUTHENTICATION_EXEMPT_VIEWS = [
     'session_manager_send_registration_link',
 ]
 
-MIDDLEWARE_DEBUG = True
+MIDDLEWARE_DEBUG = False
 
 # override these to redirect to customized templates
 AUTHENTICATION_REQUIRED_REDIRECT = 'session_manager_login'
