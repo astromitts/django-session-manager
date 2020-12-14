@@ -124,6 +124,14 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'base/static')
 
+# Session Manager Settings
+LOGIN_SUCCESS_REDIRECT = 'session_manager_profile'
+PW_RESET_SUCCESS_REDIRECT = 'session_manager_profile'
+DEFAULT_ERROR_TEMPLATE = 'session_manager/error.html'
+
+
+# Middleware authentication settings
+MIDDLEWARE_DEBUG = False
 AUTHENTICATION_EXEMPT_VIEWS = [
     'session_manager_register',
     'session_manager_login',
@@ -131,14 +139,7 @@ AUTHENTICATION_EXEMPT_VIEWS = [
     'session_manager_send_reset_password_link',
     'session_manager_send_registration_link',
 ]
-
-MIDDLEWARE_DEBUG = False
-
-# override these to redirect to customized templates
 AUTHENTICATION_REQUIRED_REDIRECT = 'session_manager_login'
-LOGIN_SUCCESS_REDIRECT = 'session_manager_profile'
-PW_RESET_SUCCESS_REDIRECT = 'session_manager_profile'
-DEFAULT_ERROR_TEMPLATE = 'session_manager/error.html'
 
 # display settings
 APP_NAME = 'Django Session Manager'
