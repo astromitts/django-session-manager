@@ -18,7 +18,8 @@ from session_manager.forms import (
     LoginPasswordForm,
     RegistrationLinkForm,
     ResetPasswordForm,
-    UserProfileForm,
+    UserProfileUsernameForm,
+    UserProfileEmailUsernameForm,
     validate_email,
 )
 
@@ -49,7 +50,16 @@ class CreateUserView(View):
                 messages.error(request, 'Registration link invalid or expired')
                 return redirect(reverse('session_manager_login'))
             else:
-                form = CreateUserForm(initial={'email': registration_token.user.email})
+                if settings.MAKE_USERNAME_EMAIL:
+                    initial = {
+                        'email': registration_token.user.email,
+                        'username': registration_token.user.username
+                    }
+                else:
+                    initial = {
+                        'email': registration_token.user.email,
+                    }
+                form = CreateUserForm(initial=initial)
         else:
             form = LoginEmailForm()
         self.context.update({
@@ -62,8 +72,13 @@ class CreateUserView(View):
             form = CreateUserForm(request.POST)
             if form.is_valid():
                 user = SessionManager.get_user_by_username(request.POST['email'])
+                if not settings.MAKE_USERNAME_EMAIL:
+                    username = request.POST['username']
+                else:
+                    username = request.POST['email']
                 SessionManager.register_user(
                     user,
+                    username=username,
                     password=request.POST['password'],
                     first_name=request.POST['first_name'],
                     last_name=request.POST['last_name']
@@ -153,7 +168,7 @@ class LoginUserView(View):
             self.context.update({'login_stage': self.login_stage})
             form = LoginEmailForm(request.POST)
             if form.is_valid():
-                user = SessionManager.get_user_by_username(request.POST['email'])
+                user = SessionManager.get_user_by_username_or_email(request.POST['email'])
                 if not user:
                     messages.error(request, 'Could not find account with that email address.')
                 elif not user.password:
@@ -356,32 +371,49 @@ class LogOutUserView(View):
         return redirect(reverse('session_manager_login'))
 
 
-class Index(View):
+class Profile(View):
     def get(self, request, *args, **kwargs):
-        template = loader.get_template('session_manager/index.html')
-        if not self.request.user.is_anonymous:
-            initial={
-                'username': self.request.user.username,
-                'email': self.request.user.email,
-                'first_name': self.request.user.first_name,
-                'last_name': self.request.user.last_name,
-                'user_id': self.request.user.pk,
-            }
+        template = loader.get_template('session_manager/profile.html')
+        context = {}
+        return HttpResponse(template.render(context, request))
+
+
+class UpdateProfileView(View):
+    def setup(self, request, *args, **kwargs):
+        super(UpdateProfileView, self).setup(request, *args, **kwargs)
+        self.template = loader.get_template('session_manager/default.html')
+        if settings.MAKE_USERNAME_EMAIL:
+            self.form = UserProfileEmailUsernameForm
         else:
-            initial = {}
-        form = UserProfileForm(initial=initial)
+            self.form = UserProfileUsernameForm
+
+    def get(self, request, *args, **kwargs):
+        initial = {
+            'email': self.request.user.email,
+            'first_name': self.request.user.first_name,
+            'last_name': self.request.user.last_name,
+            'user_id': self.request.user.pk,
+        }
+        if not settings.MAKE_USERNAME_EMAIL:
+            initial['username'] = self.request.user.username
+
+        form = self.form(initial=initial)
         context = {
             'form': form,
         }
-        return HttpResponse(template.render(context, request))
+        return HttpResponse(self.template.render(context, request))
 
     def post(self, request, *args, **kwargs):
-        template = loader.get_template('session_manager/index.html')
-        form = UserProfileForm(request.POST)
-
+        form = self.form(request.POST)
         if form.is_valid():
+            # django doesn't like to update request.user directly as this is a lazy load object
             user = User.objects.get(pk=self.request.user.pk)
-            user.username = request.POST['username']
+
+            if settings.MAKE_USERNAME_EMAIL:
+                user.username = request.POST['email']
+            else:
+                user.username = request.POST['username']
+
             user.email = request.POST['email']
             user.first_name = request.POST['first_name']
             user.last_name = request.POST['last_name']
@@ -392,4 +424,4 @@ class Index(View):
             context = {
                 'form': form,
             }
-            return HttpResponse(template.render(context, request))
+            return HttpResponse(self.template.render(context, request))

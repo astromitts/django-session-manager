@@ -103,6 +103,14 @@ Display for your app name in email output and templates
 Personal preference here - if you want Django success messages
 added to templates on successful login (required for tests)
 
+**MAKE_USERNAME_EMAIL** (Boolean)
+When True, a user's email address will be used as their username
+in the related Django User account. "Username" fields will be excluded
+from registration and profile forms.
+
+When False, users will be prompted to submit a separate username on
+registration and be able to change it in the user profile form later.
+
 ## SessionManagerEmailer
 Handler for sending emails via SendGrid. This app enforces a
 registration flow that looks like:

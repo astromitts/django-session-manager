@@ -96,32 +96,64 @@ class MiddlewareTestCase(SessionManagerTestCase):
 class TestRegistrationFlow(SessionManagerTestCase):
     """ Test cases for form based registration
     """
-    def test_register_user_happy_path(self):
+    def test_register_user_happy_path_no_username(self):
         """ Verify a user can register when they provide all the correct data
         """
-        register_get = self.client.get(self.register_url)
-        self.assertEqual(register_get.status_code, 200)
 
-        post_data_page_1 = {
-            'email': 'test@example.com',
-        }
-        post_data_page_2 = {
-            'email': 'test@example.com',
-            'first_name': 'Bo',
-            'last_name': 'Morin',
-            'password': 't3st3r@dmin',
-            'confirm_password': 't3st3r@dmin',
-        }
+        with self.settings(MAKE_USERNAME_EMAIL=True):
+            register_get = self.client.get(self.register_url)
+            self.assertEqual(register_get.status_code, 200)
 
-        register_page_1 = self.client.post(self.register_url, post_data_page_1, follow=True)
-        self.assertMessageInContext(register_page_1, 'Thanks! To verify your email address, we have sent you a link to complete your registration.')
+            post_data_page_1 = {
+                'email': 'test@example.com',
+            }
+            post_data_page_2 = {
+                'email': 'test@example.com',
+                'first_name': 'Bo',
+                'last_name': 'Morin',
+                'password': 't3st3r@dmin',
+                'confirm_password': 't3st3r@dmin',
+            }
 
-        register_page_2 = self.client.post(self.register_url, post_data_page_2, follow=True)
-        self.assertMessageInContext(register_page_2, 'Registration complete! Please log in to continue.')
+            register_page_1 = self.client.post(self.register_url, post_data_page_1, follow=True)
+            self.assertMessageInContext(register_page_1, 'Thanks! To verify your email address, we have sent you a link to complete your registration.')
 
-        new_user = User.objects.get(email=post_data_page_2['email'])
-        self.assertEqual(new_user.username, post_data_page_2['email'])
-        self.assertTrue(new_user.check_password(post_data_page_2['password']))
+            register_page_2 = self.client.post(self.register_url, post_data_page_2, follow=True)
+            self.assertMessageInContext(register_page_2, 'Registration complete! Please log in to continue.')
+
+            new_user = User.objects.get(email=post_data_page_2['email'])
+            self.assertEqual(new_user.username, post_data_page_2['email'])
+            self.assertTrue(new_user.check_password(post_data_page_2['password']))
+
+    def test_register_user_happy_path_with_username(self):
+        """ Verify a user can register when they provide all the correct data
+        """
+
+        with self.settings(MAKE_USERNAME_EMAIL=False):
+            register_get = self.client.get(self.register_url)
+            self.assertEqual(register_get.status_code, 200)
+
+            post_data_page_1 = {
+                'email': 'test@example.com',
+            }
+            post_data_page_2 = {
+                'email': 'test@example.com',
+                'username': 'test-user',
+                'first_name': 'Bo',
+                'last_name': 'Morin',
+                'password': 't3st3r@dmin',
+                'confirm_password': 't3st3r@dmin',
+            }
+
+            register_page_1 = self.client.post(self.register_url, post_data_page_1, follow=True)
+            self.assertMessageInContext(register_page_1, 'Thanks! To verify your email address, we have sent you a link to complete your registration.')
+
+            register_page_2 = self.client.post(self.register_url, post_data_page_2, follow=True)
+            self.assertMessageInContext(register_page_2, 'Registration complete! Please log in to continue.')
+
+            new_user = User.objects.get(email=post_data_page_2['email'])
+            self.assertEqual(new_user.username, post_data_page_2['username'])
+            self.assertTrue(new_user.check_password(post_data_page_2['password']))
 
     def test_username_already_exists(self):
         """ Verify the correct registration error message when a username already exists

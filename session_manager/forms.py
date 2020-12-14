@@ -1,11 +1,13 @@
+from django.conf import settings
 from django.forms import (
+    CharField,
+    EmailField,
+    EmailInput,
     Form,
+    HiddenInput,
     ModelForm,
     PasswordInput,
-    CharField,
-    HiddenInput,
     TextInput,
-    EmailInput,
 )
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -102,12 +104,32 @@ class CreateUserForm(ModelForm):
 
     class Meta:
         model = User
-        fields = ['email', 'first_name', 'last_name', 'password', 'confirm_password']
+        if settings.MAKE_USERNAME_EMAIL:
+            fields = [
+                'email',
+                'first_name',
+                'last_name',
+                'password',
+                'confirm_password',
+            ]
+        else:
+            fields = [
+                'email',
+                'username',
+                'first_name',
+                'last_name',
+                'password',
+                'confirm_password',
+            ]
+
         widgets = {
             'password': PasswordInput(attrs={'class': 'form-control'}),
             'email': HiddenInput(),
-            # 'username': TextInput(attrs={'class': 'form-control'})
+            'first_name': TextInput(attrs={'class': 'form-control'}),
+            'last_name': TextInput(attrs={'class': 'form-control'}),
         }
+        if not settings.MAKE_USERNAME_EMAIL:
+            widgets['username'] = TextInput(attrs={'class': 'form-control'})
 
     def clean(self):
         """ Enforces username and password requirements
@@ -159,17 +181,6 @@ class ResetPasswordForm(ModelForm):
 
         return data
 
-
-class LoginUserForm(ModelForm):
-    class Meta:
-        model = User
-        fields = ['email', 'password']
-        widgets = {
-            'email': TextInput(attrs={'class': 'form-control'}),
-            'password': PasswordInput(attrs={'class': 'form-control'})
-        }
-
-
 class LoginEmailForm(ModelForm):
     class Meta:
         model = User
@@ -199,22 +210,17 @@ class RegistrationLinkForm(ModelForm):
 
 
 class UserProfileForm(Form):
-    # username = CharField(widget=TextInput(attrs={'class': 'form-control'}))
-    email = CharField(widget=EmailInput(attrs={'class': 'form-control'}))
-    first_name = CharField(widget=TextInput(attrs={'class': 'form-control'}))
-    last_name = CharField(widget=TextInput(attrs={'class': 'form-control'}))
-    user_id = CharField(widget=HiddenInput())
-
     def clean(self):
         super(UserProfileForm, self).clean()
         data = self.cleaned_data
         user = User.objects.get(pk=data['user_id'])
         errors = []
 
-        # clean_username = self.cleaned_data['username']
-        # username_errors = validate_username(clean_username, user.pk)
-        # if username_errors:
-        #     errors.append(username_errors)
+        if not settings.MAKE_USERNAME_EMAIL:
+            clean_username = self.cleaned_data['username']
+            username_errors = validate_username(clean_username, user.pk)
+            if username_errors:
+                errors.append(username_errors)
 
         clean_email = self.cleaned_data['email']
         email_error = validate_email(clean_email, user.pk)
@@ -226,3 +232,17 @@ class UserProfileForm(Form):
             raise ValidationError(mark_safe(''.join(errors)))
 
         return data
+
+
+class UserProfileUsernameForm(UserProfileForm):
+    user_id = CharField(widget=HiddenInput())
+    email = EmailField(widget=EmailInput(attrs={'class': 'form-control'}))
+    username = CharField(widget=TextInput(attrs={'class': 'form-control'}))
+    first_name = CharField(widget=TextInput(attrs={'class': 'form-control'}))
+    last_name = CharField(widget=TextInput(attrs={'class': 'form-control'}))
+
+class UserProfileEmailUsernameForm(UserProfileForm):
+    user_id = CharField(widget=HiddenInput())
+    email = EmailField(widget=EmailInput(attrs={'class': 'form-control'}))
+    first_name = CharField(widget=TextInput(attrs={'class': 'form-control'}))
+    last_name = CharField(widget=TextInput(attrs={'class': 'form-control'}))

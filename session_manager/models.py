@@ -35,6 +35,16 @@ class SessionManager(models.Model):
         return User.objects.filter(username__iexact=username).first()
 
     @classmethod
+    def get_user_by_username_or_email(cls, username_or_email):
+        """ Retrieve User if one with a matching username exists
+        """
+        if '@' in username_or_email:
+            user = User.objects.filter(email__iexact=username_or_email).first()
+        else:
+            user = User.objects.filter(username__iexact=username_or_email).first()
+        return user
+
+    @classmethod
     def search(cls, email):
         """ Retrieve User if one with a matching email exists
         """
@@ -69,10 +79,13 @@ class SessionManager(models.Model):
         return User.objects.get(pk=pk)
 
     @classmethod
-    def register_user(cls, user, first_name=' ', last_name=' ', password=None):
+    def register_user(cls, user, first_name=' ', last_name=' ', password=None,  username=None):
         """ Create a new User instance, set the password and return the User object
         """
-        user.username = user.email
+        if not username:
+            user.username = user.email
+        else:
+            user.username = username
         user.first_name = first_name
         user.last_name = last_name
 
@@ -83,12 +96,14 @@ class SessionManager(models.Model):
         return user
 
     @classmethod
-    def create_user(cls, email, first_name=' ', last_name=' ', password=None):
+    def create_user(cls, email, first_name=' ', last_name=' ', password=None,  username=None):
         """ Create a new User instance, set the password and return the User object
         """
+        if not username:
+            username = email
         new_user = User(
             email=email,
-            username=email,
+            username=username,
             first_name=first_name,
             last_name=last_name,
         )

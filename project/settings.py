@@ -128,7 +128,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'base/static')
 LOGIN_SUCCESS_REDIRECT = 'session_manager_profile'
 PW_RESET_SUCCESS_REDIRECT = 'session_manager_profile'
 DEFAULT_ERROR_TEMPLATE = 'session_manager/error.html'
-
+MAKE_USERNAME_EMAIL = True
 
 # Middleware authentication settings
 MIDDLEWARE_DEBUG = False
