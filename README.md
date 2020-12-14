@@ -52,7 +52,7 @@ EMAILS_FROM (String)
 The from email address for your app
 
 SENDGRID_API_KEY (String)
-Valid API key for an verified sender in Send Grid
+Valid API key for a verified sender in Send Grid
 
 
 ## Middleware

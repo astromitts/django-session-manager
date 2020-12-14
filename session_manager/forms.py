@@ -56,7 +56,7 @@ def validate_username(clean_username, user_pk):
     return error_message
 
 
-def validate_password(clean_password):
+def validate_password(clean_password, confirm_password):
     has_alpha = False
     has_number = False
     has_special = False
@@ -83,6 +83,10 @@ def validate_password(clean_password):
                 ', '.join(special_chars)
             )
         )
+
+    if confirm_password != clean_password:
+        password_errors.append('<li>Password does not match.</li>')
+
     if password_errors:
         error_message = 'Invalid password: <ul>{}</ul>'.format(''.join(password_errors))
     return error_message
@@ -113,15 +117,10 @@ class CreateUserForm(ModelForm):
         errors = []
 
         clean_password = self.cleaned_data['password']
-        password_errors = validate_password(clean_password)
+        confirm_password = self.cleaned_data['confirm_password']
+        password_errors = validate_password(clean_password, confirm_password)
         if password_errors:
             errors.append(password_errors)
-        if clean_password != data['confirm_password']:
-            errors.append('<li>Password does not match</li>')
-        # clean_username = self.cleaned_data['username']
-        # username_errors = validate_username(clean_username, 0)
-        # if username_errors:
-        #     errors.append(username_errors)
 
         clean_email = self.cleaned_data['email']
         email_error = validate_email(clean_email, 0)
@@ -150,11 +149,14 @@ class ResetPasswordForm(ModelForm):
         user = User.objects.get(pk=data['user_id'])
         errors = []
         clean_password = self.cleaned_data['password']
-        password_errors = validate_password(clean_password)
+        confirm_password = self.cleaned_data['confirm_password']
+        password_errors = validate_password(clean_password, confirm_password)
         if password_errors:
             errors.append(password_errors)
-        if clean_password != data['confirm_password']:
-            errors.append('<li>Password does not match</li>')
+
+        if errors:
+            raise ValidationError(mark_safe('<br />'.join(errors)))
+
         return data
 
 

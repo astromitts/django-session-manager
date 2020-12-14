@@ -12,7 +12,7 @@ import hashlib
 import random
 import string
 
-from session_manager.utils import twentyfourhoursfromnow
+from session_manager.utils import TimeDiff
 
 
 class SessionManager(models.Model):
@@ -137,13 +137,13 @@ class UserToken(models.Model):
 
         )
     )
-    expiration = models.DateTimeField(blank=True, default=twentyfourhoursfromnow)
+    expiration = models.DateTimeField(blank=True, default=TimeDiff.fourtyeighthoursfromnow)
 
     @classmethod
     def clean(cls, user, token_type):
         cls.objects.filter(user=user, token_type=token_type).all().delete()
 
-    def _generate_login_token(self):
+    def _generate_token(self):
         """ Helper function to generate unique tokens
         """
         token_base = '{}-{}-{}'.format(
@@ -158,7 +158,7 @@ class UserToken(models.Model):
         """ Override the save function so that a token is generated on initial creation
         """
         if not self.token:
-            self.token = self._generate_login_token()
+            self.token = self._generate_token()
         super(UserToken, self).save(*args, **kwargs)
 
     @property

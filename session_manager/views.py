@@ -91,9 +91,12 @@ class CreateUserView(View):
                         user = SessionManager.create_user(request.POST['email'])
                     UserToken.clean(user=user, token_type='registration')
                     token = UserToken(user=user, token_type='registration')
-                    token._generate_login_token()
+                    token._generate_token()
                     token.save()
-                    SessionManagerEmailer.send_app_registration_link(user, token)
+                    mailer = SessionManagerEmailer()
+                    mailer.send_app_registration_link(user, token)
+                    if settings.PREVIEW_EMAILS_IN_APP:
+                        self.context.update({'show_email': mailer})
                     messages.success(request, 'Thanks! To verify your email address, we have sent you a link to complete your registration.')
                     return HttpResponse(self.template.render(self.context, request))
             self.context.update({
@@ -109,10 +112,12 @@ class LoginUserView(View):
     def setup(self, request, *args, **kwargs):
         super(LoginUserView, self).setup(request, *args, **kwargs)
         self.template = loader.get_template('session_manager/login.html')
+        self.login_stage = 1
         self.context = {}
 
     def get(self, request, *args, **kwargs):
         # check if a login token was provided
+        self.context.update({'login_stage': self.login_stage})
         if request.GET.get('token') and request.GET.get('user'):
             token, token_error_message = UserToken.get_token(token=request.GET['token'], username=request.GET['user'], token_type='login')
             if token:
@@ -144,21 +149,35 @@ class LoginUserView(View):
         # we should only get here if they submitted the form instead of a token in the URL
         # standard Django form handling here
         if 'password' not in request.POST:
+            self.login_stage = 2
+            self.context.update({'login_stage': self.login_stage})
             form = LoginEmailForm(request.POST)
             if form.is_valid():
                 user = SessionManager.get_user_by_username(request.POST['email'])
                 if not user:
                     messages.error(request, 'Could not find account with that email address.')
                 elif not user.password:
-                    messages.error(request, "It looks like you haven't registered yet.")
+                    messages.error(
+                        request,
+                        (
+                            "It looks like you haven't completed your yet. "
+                            "If your registration link was lost or is expired, you can "
+                            "request a new one."
+                        )
+                    )
+                    self.template = loader.get_template('session_manager/default.html')
                     self.context.update({
                         'form': RegistrationLinkForm(initial={'email': user.email}),
-                        'submit_text': 'Send Registration Link',
-                        'form_action': reverse('session_manager_send_registration_link')
+                        'submit_text': 'Re-send Registration Link',
+                        'form_action': reverse('session_manager_send_registration_link'),
+                        'email': user.email,
                     })
                     return HttpResponse(self.template.render(self.context, request))
                 else:
-                    self.context['form'] = LoginPasswordForm(initial={'email': user.email})
+                    self.context.update({
+                        'form': LoginPasswordForm(initial={'email': user.email}),
+                        'email': user.email,
+                    })
                     return HttpResponse(self.template.render(self.context, request))
             else:
                 messages.error(request, 'Something went wrong. Please correct errors below.')
@@ -167,6 +186,8 @@ class LoginUserView(View):
                 })
                 return HttpResponse(self.template.render(self.context, request))
         else:
+            self.login_stage = 3
+            self.context.update({'login_stage': self.login_stage})
             form = LoginPasswordForm(request.POST)
             if form.is_valid():
                 user, error_reason = SessionManager.check_user_login(
@@ -190,6 +211,7 @@ class LoginUserView(View):
 
 class SendRegistrationLink(View):
     def post(self, request, *args, **kwargs):
+        context = {}
         form = RegistrationLinkForm(request.POST)
         if form.is_valid():
             user = SessionManager.get_user_by_username(request.POST['email'])
@@ -201,17 +223,51 @@ class SendRegistrationLink(View):
                 token_type='registration',
                 user=user
             )
-            registration_token._generate_login_token()
+            registration_token._generate_token()
             registration_token.save()
-            SessionManagerEmailer.send_app_registration_link(user, registration_token)
+            mailer = SessionManagerEmailer()
+            mailer.send_app_registration_link(user, registration_token)
             messages.success(
                 request,
                 'A registration link was sent to {}. Use the provided link to complete registration.'.format(registration_token.user.email)
             )
+            template = loader.get_template('session_manager/default.html')
+            if settings.PREVIEW_EMAILS_IN_APP:
+                context.update({'show_email': mailer})
+            return HttpResponse(template.render(context, request))
         else:
             messages.error(request, 'Could not validate request.')
-        return redirect(reverse('session_manager_login'))
+            return redirect(reverse('session_manager_login'))
 
+
+class SendPasswordResetLink(View):
+    def post(self, request, *args, **kwargs):
+        template = loader.get_template('session_manager/default.html')
+        context = {}
+        form = LoginEmailForm(request.POST)
+        if form.is_valid():
+            user = SessionManager.get_user_by_username(request.POST['email'])
+            UserToken.clean(
+                token_type='reset',
+                user=user
+            )
+            reset_token = UserToken(
+                token_type='reset',
+                user=user
+            )
+            reset_token._generate_token()
+            reset_token.save()
+            mailer = SessionManagerEmailer()
+            mailer.send_password_reset_link(reset_token)
+            messages.success(
+                request,
+                'A password reset link was sent to {}. You have 48 hours to use it.'.format(reset_token.user.email)
+            )
+            if settings.PREVIEW_EMAILS_IN_APP:
+                context.update({'show_email': mailer})
+        else:
+            messages.error(request, 'Could not validate request.')
+        return HttpResponse(template.render(context, request))
 
 
 class ResetPasswordWithTokenView(View):

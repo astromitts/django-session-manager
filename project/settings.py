@@ -127,7 +127,9 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'base/static')
 AUTHENTICATION_EXEMPT_VIEWS = [
     'session_manager_register',
     'session_manager_login',
-    'resetpassword',
+    'session_manager_token_reset_password',
+    'session_manager_send_reset_password_link',
+    'session_manager_send_registration_link',
 ]
 
 MIDDLEWARE_DEBUG = True
@@ -146,7 +148,9 @@ DISPLAY_AUTH_SUCCESS_MESSAGES = True
 LOG_EMAILS = True
 SEND_EMAILS = False
 EMAILS_FROM = 'admin@example.com'
+EMAIL_REPLY_TO = 'info@example.com'
 SENDGRID_API_KEY = None
+PREVIEW_EMAILS_IN_APP = True
 
 
-HOST = '127.0.0.1:8000'
+HOST = 'http://127.0.0.1:8000'

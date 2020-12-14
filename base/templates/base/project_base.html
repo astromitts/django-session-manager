@@ -78,6 +78,11 @@
 				{% endif %}
 			{% endblock %}
 			{% block page_content %}{% endblock %}
+			{% block email_preview %}
+				{% if show_email %}
+					{% include 'session_manager/emails/app_email_preview.html' with email=show_email %}
+				{% endif %}
+			{% endblock %}
 		</div>
 	</div>
 </body>

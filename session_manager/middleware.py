@@ -27,7 +27,7 @@ def session_request_validation(get_response):
             if is_login_page and user_is_authenticated:
                 return redirect(reverse(settings.LOGIN_SUCCESS_REDIRECT))
             if not resolved_url.url_name in settings.AUTHENTICATION_EXEMPT_VIEWS:
-                if not user_is_authenticated and not settings.MIDDLEWARE_DEBUG:
+                if not user_is_authenticated:
                     request.session['login_redirect_from'] = request.path
                     messages.error(
                         request,

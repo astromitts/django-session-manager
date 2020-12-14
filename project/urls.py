@@ -8,7 +8,10 @@ urlpatterns = [
     path('register/', CreateUserView.as_view(), name='session_manager_register'),
     path('login/', LoginUserView.as_view(), name='session_manager_login'),
     path('logout/', LogOutUserView.as_view(), name='session_manager_logout'),
+    path('sendresetpassword/', SendPasswordResetLink.as_view(), name='session_manager_send_reset_password_link'),
+    path('sendregistrationlink/', SendRegistrationLink.as_view(), name='session_manager_send_registration_link'),
     path('resetpassword/', ResetPasswordWithTokenView.as_view(), name='session_manager_token_reset_password'),
     path('profile/resetpassword/', ResetPasswordFromProfileView.as_view(), name='session_manager_profile_reset_password'),
     path('profile/', Index.as_view(), name='session_manager_profile'),
+    path('', Index.as_view(), name='session_manager_profile'),
 ]

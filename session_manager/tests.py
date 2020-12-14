@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth.models import User
 from session_manager.models import UserToken
-from session_manager.utils import yesterday
+from session_manager.utils import TimeDiff
 
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
@@ -147,6 +147,7 @@ class TestRegistrationFlow(SessionManagerTestCase):
         must_contain_number = 'Must contain at least one number.'
         must_contain_special = 'Must contain at least one special character'
         min_length = 'Must be at least 8 characters.'
+        confirm_password = 'Password does not match.'
 
         bad_password_posts = [
             {
@@ -229,6 +230,15 @@ class TestRegistrationFlow(SessionManagerTestCase):
                     'confirm_password': '#########a',
                 },
                 'expected_errors': [must_contain_number]
+            },
+            {
+                'post_data': {
+                    'email': 'different@example.com',
+                    'username': 'tester',
+                    'password': '111###aaa',
+                    'confirm_password': '111###aab',
+                },
+                'expected_errors': [confirm_password]
             },
         ]
 
@@ -361,7 +371,7 @@ class TestTokenLogin(SessionManagerTestCase):
             'password': 't3st3r@dmin'
         }
         user = self._create_user(**user_data)
-        user_token = UserToken(user=user, token_type='login', expiration=yesterday())
+        user_token = UserToken(user=user, token_type='login', expiration=TimeDiff.yesterday())
         user_token.save()
         login_request = self.client.get(user_token.path, follow=True)
         self.assertMessageInContext(login_request, 'Token is expired.')
@@ -441,7 +451,7 @@ class TestTokenPasswordReset(SessionManagerTestCase):
             'username': 'testuser',
         }
         user = self._create_user(**user_data)
-        user_token = UserToken(user=user, token_type='reset', expiration=yesterday())
+        user_token = UserToken(user=user, token_type='reset', expiration=TimeDiff.yesterday())
         user_token.save()
         reset_request = self.client.get(user_token.path, follow=True)
         self.assertMessageInContext(reset_request, 'Token is expired.')
