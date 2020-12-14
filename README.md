@@ -39,7 +39,7 @@ You should be redirected to http://127.0.0.1:8000/login/ with a message stating
 that you must be logged in. To change the redirect route used by this function,
 see AUTHENTICATION_REQUIRED_REDIRECT under the Middleware section below. 
 
-![registration screen](screenshots/register-1.png)
+![registration screen](https://raw.githubusercontent.com/astromitts/django-session-manager/main/screenshots/register-1.png)
 
 Start by clicking the "Register here" link.
 
@@ -48,7 +48,7 @@ Type in an email address and submit.
 You should see a message indicating that an email has been sent to the address
 provided and a preview of what the email will look like. 
 
-![registration screen](screenshots/register-2.png)
+![registration screen](https://raw.githubusercontent.com/astromitts/django-session-manager/main/screenshots/register-2.png)
 
 **Note** No emails are actually sent by default. This app requires you to create
 a sendgrid account with a valid API key for that to work. The purpose of the email
@@ -57,13 +57,13 @@ below for details.
 
 Follow the link in the email preview to complete the registration process:
 
-![registration screen](screenshots/register-3.png)
+![registration screen](https://raw.githubusercontent.com/astromitts/django-session-manager/main/screenshots/register-3.png)
 
 **Note** Registration and login links are set to expire in 48 hours by default. If a
 user fails to use their registration link before it expires, they will be prompted to
 resend it next time they attempt to register or login with the same email address:
 
-![registration screen](screenshots/register-resend.png)
+![registration screen](https://raw.githubusercontent.com/astromitts/django-session-manager/main/screenshots/register-resend.png)
 
 
 ## User Log In
@@ -71,9 +71,9 @@ Once registered, a user can input their registered email address at /login/. The
 log in flow has two views - one prompting for an email address and the second prompting
 for a password:
 
-![registration screen](screenshots/login-1.png)
-![registration screen](screenshots/login-2.png)
-![registration screen](screenshots/login-success.png)
+![registration screen](https://raw.githubusercontent.com/astromitts/django-session-manager/main/screenshots/login-1.png)
+![registration screen](https://raw.githubusercontent.com/astromitts/django-session-manager/main/screenshots/login-2.png)
+![registration screen](https://raw.githubusercontent.com/astromitts/django-session-manager/main/screenshots/login-success.png)
 
 
 ## Password Resets
