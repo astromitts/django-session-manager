@@ -91,7 +91,7 @@ Logged out users who need to reset a password can do so by clicking "Send a pass
 button on the second login view. This works similarly to the registration link email.
 
 
-### Settings
+## Settings
 **LOGIN_SUCCESS_REDIRECT** (String)
 urls.py path name of the view to redirect users to after
 successful log in
@@ -111,22 +111,21 @@ from registration and profile forms.
 When False, users will be prompted to submit a separate username on
 registration and be able to change it in the user profile form later.
 
+![profile with username as email](https://raw.githubusercontent.com/astromitts/django-session-manager/main/screenshots/email-as-username.png)
+
+
+![profile with different username](https://raw.githubusercontent.com/astromitts/django-session-manager/main/screenshots/independent-username.png)
+
+
+
+### Tests
+All view logic should be covered via tests.py, to run:
+`python manage.py test`
+
+
+# Additional Modules
 ## SessionManagerEmailer
-Handler for sending emails via SendGrid. This app enforces a
-registration flow that looks like:
-	1) Submit your email address
-	2) Back-end creates and saves a User object for that email
-	3) Back-end sends an email* to given email address containing
-	   a valid registration token embedded in a link
-	4) User clicks the link
-	5) Back-end validates link - if valid, presents registration form
-	6) User completes registration form is allowed to log in
-
-\*The template for this email is in templates/session_manager/emails
-
-For development and testing purposes, there is an EmailLog model
-which you can use to bypass sending actual emails and just check
-the content and settings of emails that would otherwise be sent.
+Handler for sending emails via SendGrid. 
 
 ### Settings
 **LOG_EMAILS** (Boolean)
@@ -136,7 +135,7 @@ actual emails.
 **SEND_EMAILS** (Boolean)
 Turn on to enable sending emails via Send Grid
 
-**PREVIEW_EMAILS_IN_AP**P (Boolean)
+**PREVIEW_EMAILS_IN_APP** (Boolean)
 **True by default! Turn off in production settings**
 Triggers an email preview to be rendered in the browser window for login and registration link emails
 
@@ -171,9 +170,4 @@ error_message: String, error message to display on page
 **AUTHENTICATION_REQUIRED_REDIRECT** (String)
 urls.py path name of the view to redirect unauthenticated
 users to when they attempt to access a restricted page
-
-## Tests
-
-All view logic should be covered via tests.py, to run:
-`python manage.py test`
 

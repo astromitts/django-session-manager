@@ -4,9 +4,11 @@
 	<h1>Welcome!</h1> 
 	<div>You are logged in as</div>
 	<ul>
+		{% if show_username %}
+			<li><b>Username:</b> {{request.user.username}}</li>
+		{% endif %}
 		<li><b>First name:</b> {{request.user.first_name}}</li>
 		<li><b>Last name:</b> {{request.user.last_name}}</li>
-		<li><b>Username:</b> {{request.user.username}}</li>
 		<li><b>Email:</b> {{request.user.email}}</li>
 	</ul>
 

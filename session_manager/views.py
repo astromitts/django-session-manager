@@ -26,7 +26,6 @@ from session_manager.forms import (
 from session_manager.mailer import SessionManagerEmailer
 from session_manager.models import SessionManager, UserToken
 
-
 class CreateUserView(View):
     """ Views for a new user registration
     """
@@ -374,7 +373,9 @@ class LogOutUserView(View):
 class Profile(View):
     def get(self, request, *args, **kwargs):
         template = loader.get_template('session_manager/profile.html')
-        context = {}
+        context = {
+            'show_username': not settings.MAKE_USERNAME_EMAIL
+        }
         return HttpResponse(template.render(context, request))
 
 
