@@ -12,12 +12,12 @@ them registration or login credentials.
 Extend or override the template files to customize.
 
 ### Settings
-LOGIN_SUCCESS_REDIRECT (String)
+**LOGIN_SUCCESS_REDIRECT** (String)
 urls.py path name of the view to redirect users to after
 successful log in
 
-APP_NAME (String)
-Just for displaying in email output
+**APP_NAME** (String)
+Display for your app name in email output and templates
 
 DISPLAY_AUTH_SUCCESS_MESSAGES (Boolean)
 Personal preference here - if you want Django success messages
@@ -41,17 +41,21 @@ which you can use to bypass sending actual emails and just check
 the content and settings of emails that would otherwise be sent.
 
 ### Settings
-LOG_EMAILS (Boolean)
+**LOG_EMAILS** (Boolean)
 Turn on/off to log emails either in place of or along with sending
 actual emails.
 
-SEND_EMAILS (Boolean)
+**SEND_EMAILS** (Boolean)
 Turn on to enable sending emails via Send Grid
 
-EMAILS_FROM (String)
+**PREVIEW_EMAILS_IN_AP**P (Boolean)
+**True by default! Turn off in production settings**
+Triggers an email preview to be rendered in the browser window for login and registration link emails
+
+**EMAILS_FROM** (String)
 The from email address for your app
 
-SENDGRID_API_KEY (String)
+**SENDGRID_API_KEY** (String)
 Valid API key for a verified sender in Send Grid
 
 
@@ -62,18 +66,21 @@ authentication, as well as rendering an error page for
 404s and uncaught exceptions to give a good UX.
 
 ### Settings
-MIDDLEWARE_DEBUG (Boolean)
+**MIDDLEWARE_DEBUG** (Boolean)
 Set to True to bypass the middleware authentication/error 
 handling
 
-DEFAULT_ERROR_TEMPLATE (String)
+**AUTHENTICATION_EXEMPT_VIEWS** (List: Strings)
+List of urls.py path names that are exempt from middleware authentcation checks
+
+**DEFAULT_ERROR_TEMPLATE** (String)
 Static path to the HTML template to use to display error
 messages to users. The following context is passed to it 
 from the middleware function:
 status_code: Int, HTML status code of the error
 error_message: String, error message to display on page
 
-AUTHENTICATION_REQUIRED_REDIRECT (String)
+**AUTHENTICATION_REQUIRED_REDIRECT** (String)
 urls.py path name of the view to redirect unauthenticated
 users to when they attempt to access a restricted page
 
