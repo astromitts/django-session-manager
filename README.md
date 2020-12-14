@@ -48,7 +48,7 @@ Type in an email address and submit.
 You should see a message indicating that an email has been sent to the address
 provided and a preview of what the email will look like. 
 
-![registration link email screen](https://raw.githubusercontent.com/astromitts/django-session-manager/main/screenshots/register-2.png)
+![registration link email screen](https://raw.githubusercontent.com/astromitts/django-session-manager/main/screenshots/registration-2.png)
 
 **Note** No emails are actually sent by default. This app requires you to create
 a sendgrid account with a valid API key for that to work. The purpose of the email
@@ -57,13 +57,17 @@ below for details.
 
 Follow the link in the email preview to complete the registration process:
 
-![registration complete screen](https://raw.githubusercontent.com/astromitts/django-session-manager/main/screenshots/register-3.png)
+
+![registration complete screen](https://raw.githubusercontent.com/astromitts/django-session-manager/main/screenshots/registration-3.png)
+
 
 **Note** Registration and login links are set to expire in 48 hours by default. If a
 user fails to use their registration link before it expires, they will be prompted to
 resend it next time they attempt to register or login with the same email address:
 
-![registration resend link screen](https://raw.githubusercontent.com/astromitts/django-session-manager/main/screenshots/register-resend.png)
+
+![registration resend link screen](https://raw.githubusercontent.com/astromitts/django-session-manager/main/screenshots/registration-resend.png)
+
 
 
 ## User Log In
@@ -71,9 +75,13 @@ Once registered, a user can input their registered email address at /login/. The
 log in flow has two views - one prompting for an email address and the second prompting
 for a password:
 
+
 ![login email screen](https://raw.githubusercontent.com/astromitts/django-session-manager/main/screenshots/login-1.png)
+
 ![login password screen](https://raw.githubusercontent.com/astromitts/django-session-manager/main/screenshots/login-2.png)
+
 ![login success screen](https://raw.githubusercontent.com/astromitts/django-session-manager/main/screenshots/login-success.png)
+
 
 
 ## Password Resets
