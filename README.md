@@ -28,6 +28,7 @@ On your command line, run:
 ```
 Pipenv install
 Pipenv shell
+pip install -r requirements.txt
 python mange.py migrate
 python manage.py runserver
 ```
