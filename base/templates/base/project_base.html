@@ -8,7 +8,7 @@
 	<meta name="description" content="">
 	<meta name="keywords" content="">
 	<meta name="author" content="Bo Morin">
-	<title>{% block page_title %}Session Manager Project{% endblock %}</title>
+	<title>{% block page_title %}{{APP_NAME}}{% endblock %}</title>
 	<link rel="shortcut icon" href="{% static 'site-images/favicon.ico' %}" />
 	<meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no' name='viewport' />
 	<link href="{% static 'vendors/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
@@ -25,7 +25,7 @@
 	{% block header_nav %}
 		<nav class="navbar navbar-expand-sm bg-light navbar-light">
 			<div class="container">
-				<a class="navbar-brand float-left" href="{% url 'session_manager_profile' %}">Session Manager Template
+				<a class="navbar-brand float-left" href="{% url 'session_manager_profile' %}">{{APP_NAME}}
 				</a>
 				<ul class="navbar-nav">
 					{% if request.user.is_authenticated %}

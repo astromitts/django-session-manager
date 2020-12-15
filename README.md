@@ -90,15 +90,19 @@ Logged in users can reset their password via the URL path 'session_manager_profi
 
 Logged out users who need to reset a password can do so by clicking "Send a password reset link"
 button on the second login view. This works similarly to the registration link email.
+ 
+## Context Processors
+The following app settings are located in `session_manager.context_processors.py`
+
+
+**APP_NAME** (String)
+Display for your app name in email output and base templates
 
 
 ## Settings
 **LOGIN_SUCCESS_REDIRECT** (String)
 urls.py path name of the view to redirect users to after
 successful log in
-
-**APP_NAME** (String)
-Display for your app name in email output and templates
 
 **DISPLAY_AUTH_SUCCESS_MESSAGES** (Boolean)
 Personal preference here - if you want Django success messages

@@ -4,6 +4,8 @@ from sendgrid.helpers.mail import Mail
 from session_manager.models import EmailLog
 from django.template.loader import render_to_string
 
+from session_manager.context_processors import session_manager_app_context
+
 
 class SessionManagerEmailer(object):
     to_email = None
@@ -11,11 +13,14 @@ class SessionManagerEmailer(object):
     html_body = None
 
     def __init__(self):
-        self.context = {
-            'app_name': settings.APP_NAME,
-            'reply_to': settings.EMAIL_REPLY_TO,
+        # Because we are doing render_to_string to print emails, instead of
+        # rendering a template through a view request, the django context
+        # processors are not called. Call the app contex processor manually here.
+        self.context = session_manager_app_context()
 
-        }
+        self.context.update({
+            'reply_to': settings.EMAIL_REPLY_TO,
+        })
 
     def send_email(self, email_type, to_email, subject, html_body):
         self.to_email = to_email

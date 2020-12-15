@@ -66,6 +66,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'session_manager.context_processors.session_manager_app_context'
             ],
         },
     },
@@ -142,7 +143,8 @@ AUTHENTICATION_EXEMPT_VIEWS = [
 AUTHENTICATION_REQUIRED_REDIRECT = 'session_manager_login'
 
 # display settings
-APP_NAME = 'Django Session Manager'
+# APP_NAME DEPRECATED: Use session_manager.context_processors.py for this setting
+APP_NAME = None
 DISPLAY_AUTH_SUCCESS_MESSAGES = True
 
 # email settings
