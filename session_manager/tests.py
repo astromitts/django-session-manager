@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth.models import User
-from session_manager.models import UserToken
+from session_manager.models import SessionManager, UserToken
 from session_manager.utils import TimeDiff
 
 from bs4 import BeautifulSoup
@@ -125,6 +125,8 @@ class TestRegistrationFlow(SessionManagerTestCase):
             new_user = User.objects.get(email=post_data_page_2['email'])
             self.assertEqual(new_user.username, post_data_page_2['email'])
             self.assertTrue(new_user.check_password(post_data_page_2['password']))
+
+            self.assertTrue(SessionManager.objects.get(user=new_user))
 
     def test_register_user_happy_path_with_username(self):
         """ Verify a user can register when they provide all the correct data with settings.MAKE_USERNAME_EMAIL = False

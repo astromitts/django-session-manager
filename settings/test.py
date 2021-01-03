@@ -1,3 +1,3 @@
-from project.settings import *
+from settings import *
 
 MIDDLEWARE_DEBUG = True

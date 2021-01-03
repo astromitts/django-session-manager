@@ -16,16 +16,15 @@ from session_manager.utils import TimeDiff
 
 
 class SessionManager(models.Model):
-    """ Abstract helper model for login, register and log out
+    """ Helper model for login, register and log out, etc functions
     """
-    class Meta:
-        abstract = True
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     @classmethod
     def user_exists(cls, email):
         """ Return True/False if User with given email exists
         """
-        user_qs = User.objects.filter(email=email)
+        user_qs = cls.objects.filter(email=email)
         return user_qs.exists()
 
     @classmethod
@@ -93,6 +92,8 @@ class SessionManager(models.Model):
         if password:
             user.set_password(password)
             user.save()
+        new_session_manager_instance = cls(user=user)
+        new_session_manager_instance.save()
         return user
 
     @classmethod
