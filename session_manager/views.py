@@ -102,7 +102,8 @@ class CreateUserView(View):
                 else:
                     user = SessionManager.get_user_by_username(request.POST['email'])
                     if not user:
-                        user = SessionManager.create_user(request.POST['email'])
+                        user = SessionManager.preregister_user(request.POST['email'])
+
                     UserToken.clean(user=user, token_type='registration')
                     token = UserToken(user=user, token_type='registration')
                     token._generate_token()

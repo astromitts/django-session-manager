@@ -19,6 +19,29 @@ class SessionManager(models.Model):
     """ Helper model for login, register and log out, etc functions
     """
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    registration_status = models.CharField(
+        max_length=25,
+        choices=[
+            ('pre-registered', 'pre-registered'),
+            ('invited', 'invited'),
+            ('complete', 'complete'),
+        ],
+        default='pre-registered'
+    )
+    registration_type = models.CharField(
+        max_length=25,
+        choices=[
+            ('website', 'website'),
+            ('invitation', 'invitation'),
+        ],
+        default='website'
+    )
+
+    @classmethod
+    def post_process_registration(cls, user):
+        instance = cls.objects.get(user=user)
+        instance.registration_status = 'complete'
+        instance.save()
 
     @classmethod
     def user_exists(cls, email):
@@ -92,26 +115,20 @@ class SessionManager(models.Model):
         if password:
             user.set_password(password)
             user.save()
-        new_session_manager_instance = cls(user=user)
-        new_session_manager_instance.save()
+        cls.post_process_registration(user)
         return user
 
     @classmethod
-    def create_user(cls, email, first_name=' ', last_name=' ', password=None,  username=None):
+    def preregister_user(cls, email):
         """ Create a new User instance, set the password and return the User object
         """
-        if not username:
-            username = email
         new_user = User(
             email=email,
-            username=username,
-            first_name=first_name,
-            last_name=last_name,
+            username=email
         )
         new_user.save()
-        if password:
-            new_user.set_password(password)
-            new_user.save()
+        new_session_manager_instance = cls(user=new_user)
+        new_session_manager_instance.save()
         return new_user
 
     @classmethod

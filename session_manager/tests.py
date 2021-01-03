@@ -119,14 +119,18 @@ class TestRegistrationFlow(SessionManagerTestCase):
             register_page_1 = self.client.post(self.register_url, post_data_page_1, follow=True)
             self.assertMessageInContext(register_page_1, 'Thanks! To verify your email address, we have sent you a link to complete your registration.')
 
-            register_page_2 = self.client.post(self.register_url, post_data_page_2, follow=True)
-            self.assertMessageInContext(register_page_2, 'Registration complete! Please log in to continue.')
-
             new_user = User.objects.get(email=post_data_page_2['email'])
+            session_manager_user = SessionManager.objects.get(user=new_user)
+            self.assertEqual(session_manager_user.registration_status, 'pre-registered')
+
+            register_page_2 = self.client.post(self.register_url, post_data_page_2, follow=True)
+            new_user = User.objects.get(email=post_data_page_2['email'])
+            session_manager_user = SessionManager.objects.get(user=new_user)
+            self.assertMessageInContext(register_page_2, 'Registration complete! Please log in to continue.')
             self.assertEqual(new_user.username, post_data_page_2['email'])
             self.assertTrue(new_user.check_password(post_data_page_2['password']))
+            self.assertEqual(session_manager_user.registration_status, 'complete')
 
-            self.assertTrue(SessionManager.objects.get(user=new_user))
 
     def test_register_user_happy_path_with_username(self):
         """ Verify a user can register when they provide all the correct data with settings.MAKE_USERNAME_EMAIL = False
