@@ -14,5 +14,6 @@ urlpatterns = [
     path('profile/resetpassword/', ResetPasswordFromProfileView.as_view(), name='session_manager_profile_reset_password'),
     path('profile/update/', UpdateProfileView.as_view(), name='session_manager_profile_update'),
     path('profile/', Profile.as_view(), name='session_manager_profile'),
-    path('', Profile.as_view(), name='session_manager_profile'),
+    path('end-user-license-agreement/', Eula.as_view(), name='eula'),
+    path('privacy-policy/', PrivacyPolicy.as_view(), name='privacy_policy'),
 ]

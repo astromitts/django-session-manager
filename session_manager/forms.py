@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.forms import (
+    BooleanField,
     CharField,
+    CheckboxInput,
     EmailField,
     EmailInput,
     Form,
@@ -182,6 +184,23 @@ class ResetPasswordForm(ModelForm):
         return data
 
 class LoginEmailForm(ModelForm):
+    class Meta:
+        model = User
+        fields = ['email']
+        widgets = {
+            'email': TextInput(attrs={'class': 'form-control'})
+        }
+
+class PreRegisterEmailForm(ModelForm):
+    eula_check = BooleanField(
+        widget=CheckboxInput(),
+        label=mark_safe('I have read and agree to the <a href="/end-user-license-agreement/">user license agreement</a>')
+    )
+    privacy_check = BooleanField(
+        widget=CheckboxInput(),
+        label=mark_safe('I have read and agree to the <a href="/privacy-policy/">privacy policy</a>')
+    )
+
     class Meta:
         model = User
         fields = ['email']

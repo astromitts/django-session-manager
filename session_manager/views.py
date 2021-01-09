@@ -16,6 +16,7 @@ from session_manager.forms import (
     CreateUserForm,
     LoginEmailForm,
     LoginPasswordForm,
+    PreRegisterEmailForm,
     RegistrationLinkForm,
     ResetPasswordForm,
     UserProfileUsernameForm,
@@ -25,6 +26,21 @@ from session_manager.forms import (
 
 from session_manager.mailer import SessionManagerEmailer
 from session_manager.models import SessionManager, UserToken
+
+
+class Eula(View):
+    def get(self, request, *args, **kwargs):
+        template = loader.get_template('session_manager/{}.html'.format(settings.CURRENT_EULA_VERSION))
+        context = {}
+        return HttpResponse(template.render(context, request))
+
+
+class PrivacyPolicy(View):
+    def get(self, request, *args, **kwargs):
+        template = loader.get_template('session_manager/{}.html'.format(settings.CURRENT_PRIVACY_POLICY_VERSION))
+        context = {}
+        return HttpResponse(template.render(context, request))
+
 
 class CreateUserView(View):
     """ Views for a new user registration
@@ -60,7 +76,7 @@ class CreateUserView(View):
                     }
                 form = CreateUserForm(initial=initial)
         else:
-            form = LoginEmailForm()
+            form = PreRegisterEmailForm()
         self.context.update({
             'form': form,
         })

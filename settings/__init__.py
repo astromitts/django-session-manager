@@ -139,12 +139,20 @@ AUTHENTICATION_EXEMPT_VIEWS = [
     'session_manager_token_reset_password',
     'session_manager_send_reset_password_link',
     'session_manager_send_registration_link',
+    'eula',
+    'privacy_policy',
 ]
 AUTHENTICATION_REQUIRED_REDIRECT = 'session_manager_login'
 
 # display settings
-APP_NAME = None
+APP_NAME = "Bo's Django Template"
 DISPLAY_AUTH_SUCCESS_MESSAGES = True
+
+# EULA Settings
+CURRENT_EULA_VERSION = 'eula-v1-09-01-2021'
+CURRENT_PRIVACY_POLICY_VERSION = 'privacy-policy-v1-09-01-2021'
+APP_NAME_LEGAL = "BosDjangoTemplate.example"
+
 
 # email settings
 LOG_EMAILS = True

@@ -36,6 +36,10 @@ class SessionManager(models.Model):
         ],
         default='website'
     )
+    eula_version = models.CharField(max_length=100, default=settings.CURRENT_EULA_VERSION)
+    eula_timestamp = models.DateTimeField(default=datetime.now)
+    privacy_policy_version = models.CharField(max_length=100, default=settings.CURRENT_PRIVACY_POLICY_VERSION)
+    privacy_policy_timestamp = models.DateTimeField(default=datetime.now)
 
     @classmethod
     def post_process_registration(cls, user):
