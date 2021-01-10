@@ -15,8 +15,8 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils.safestring import mark_safe
 
-from session_manager.models import SessionManager
-from session_manager.utils import special_chars
+from usermanager.models import UserManager
+from usermanager.utils import special_chars
 
 
 def validate_unique_email(email, user_pk):

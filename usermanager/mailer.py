@@ -1,13 +1,13 @@
 from django.conf import settings
+from django.template.loader import render_to_string
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
-from session_manager.models import EmailLog
-from django.template.loader import render_to_string
 
-from session_manager.context_processors import session_manager_app_context
+from usermanager.models import EmailLog
+from usermanager.context_processors import user_manager_app_context
 
 
-class SessionManagerEmailer(object):
+class UserManagerEmailer(object):
     to_email = None
     subject = None
     html_body = None
@@ -16,7 +16,7 @@ class SessionManagerEmailer(object):
         # Because we are doing render_to_string to print emails, instead of
         # rendering a template through a view request, the django context
         # processors are not called. Call the app contex processor manually here.
-        self.context = session_manager_app_context()
+        self.context = user_manager_app_context()
 
         self.context.update({
             'reply_to': settings.EMAIL_REPLY_TO,
@@ -56,7 +56,7 @@ class SessionManagerEmailer(object):
             'host': settings.HOST
         })
         body = render_to_string(
-            'session_manager/emails/registration_link.html',
+            'usermanager/emails/registration_link.html',
             context=self.context,
         )
         self.send_email(
@@ -90,7 +90,7 @@ class SessionManagerEmailer(object):
         email_type = 'Password Reset Link'
         subject = '{} Password Reset Link'.format(settings.APP_NAME)
         body = render_to_string(
-            'session_manager/emails/password_reset_link.html',
+            'usermanager/emails/password_reset_link.html',
             context=self.context,
         )
         self.send_email(

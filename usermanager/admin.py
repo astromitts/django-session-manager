@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from session_manager.models import UserToken, EmailLog
+from usermanager.models import EmailLog, UserManager, UserToken
 
 class UserTokenAdmin(admin.ModelAdmin):
     fields = [

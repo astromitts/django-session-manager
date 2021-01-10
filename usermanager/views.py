@@ -12,7 +12,7 @@ from django.urls import reverse
 
 from urllib.parse import urlparse
 
-from session_manager.forms import (
+from usermanager.forms import (
     CreateUserForm,
     LoginEmailForm,
     LoginPasswordForm,
@@ -24,20 +24,20 @@ from session_manager.forms import (
     validate_email,
 )
 
-from session_manager.mailer import SessionManagerEmailer
-from session_manager.models import SessionManager, UserToken
+from usermanager.mailer import UserManagerEmailer
+from usermanager.models import UserManager, UserToken
 
 
 class Eula(View):
     def get(self, request, *args, **kwargs):
-        template = loader.get_template('session_manager/{}.html'.format(settings.CURRENT_EULA_VERSION))
+        template = loader.get_template('usermanager/{}.html'.format(settings.CURRENT_EULA_VERSION))
         context = {}
         return HttpResponse(template.render(context, request))
 
 
 class PrivacyPolicy(View):
     def get(self, request, *args, **kwargs):
-        template = loader.get_template('session_manager/{}.html'.format(settings.CURRENT_PRIVACY_POLICY_VERSION))
+        template = loader.get_template('usermanager/{}.html'.format(settings.CURRENT_PRIVACY_POLICY_VERSION))
         context = {}
         return HttpResponse(template.render(context, request))
 
@@ -47,7 +47,7 @@ class CreateUserView(View):
     """
     def setup(self, request, *args, **kwargs):
         super(CreateUserView, self).setup(request, *args, **kwargs)
-        self.template = loader.get_template('session_manager/register.html')
+        self.template = loader.get_template('usermanager/register.html')
         self.context = {}
 
     def get(self, request, *args, **kwargs):
@@ -59,11 +59,11 @@ class CreateUserView(View):
             )
             if not registration_token:
                 messages.error(request, token_error_message)
-                return redirect(reverse('session_manager_login'))
+                return redirect(reverse('user_login'))
             elif not registration_token.is_valid:
                 registration_token.delete()
                 messages.error(request, 'Registration link invalid or expired')
-                return redirect(reverse('session_manager_login'))
+                return redirect(reverse('user_login'))
             else:
                 if settings.MAKE_USERNAME_EMAIL:
                     initial = {
@@ -86,12 +86,12 @@ class CreateUserView(View):
         if 'password' in request.POST:
             form = CreateUserForm(request.POST)
             if form.is_valid():
-                user = SessionManager.get_user_by_username(request.POST['email'])
+                user = UserManager.get_user_by_username(request.POST['email'])
                 if not settings.MAKE_USERNAME_EMAIL:
                     username = request.POST['username']
                 else:
                     username = request.POST['email']
-                SessionManager.register_user(
+                UserManager.register_user(
                     user,
                     username=username,
                     password=request.POST['password'],
@@ -100,7 +100,7 @@ class CreateUserView(View):
                 )
                 messages.success(request, 'Registration complete! Please log in to continue.')
                 UserToken.objects.filter(user=user, token_type='registration').all().delete()
-                return redirect(reverse('session_manager_login'))
+                return redirect(reverse('user_login'))
             else:
                 self.context.update({
                     'form': form,
@@ -112,19 +112,19 @@ class CreateUserView(View):
                 email_error = validate_email(request.POST['email'], 0)
                 if email_error:
                     error = '{}<p>Did you mean to <a href="{}">log in instead</a>?'.format(
-                        email_error, reverse('session_manager_login')
+                        email_error, reverse('user_login')
                     )
                     messages.error(request, error)
                 else:
-                    user = SessionManager.get_user_by_username(request.POST['email'])
+                    user = UserManager.get_user_by_username(request.POST['email'])
                     if not user:
-                        user = SessionManager.preregister_user(request.POST['email'])
+                        user = UserManager.preregister_user(request.POST['email'])
 
                     UserToken.clean(user=user, token_type='registration')
                     token = UserToken(user=user, token_type='registration')
                     token._generate_token()
                     token.save()
-                    mailer = SessionManagerEmailer()
+                    mailer = UserManagerEmailer()
                     mailer.send_app_registration_link(user, token)
                     if settings.PREVIEW_EMAILS_IN_APP:
                         self.context.update({'show_email': mailer})
@@ -142,7 +142,7 @@ class LoginUserView(View):
     """
     def setup(self, request, *args, **kwargs):
         super(LoginUserView, self).setup(request, *args, **kwargs)
-        self.template = loader.get_template('session_manager/login.html')
+        self.template = loader.get_template('usermanager/login.html')
         self.login_stage = 1
         self.context = {}
 
@@ -184,7 +184,7 @@ class LoginUserView(View):
             self.context.update({'login_stage': self.login_stage})
             form = LoginEmailForm(request.POST)
             if form.is_valid():
-                user = SessionManager.get_user_by_username_or_email(request.POST['email'])
+                user = UserManager.get_user_by_username_or_email(request.POST['email'])
                 if not user:
                     messages.error(request, 'Could not find account with that email address.')
                 elif not user.password:
@@ -196,11 +196,11 @@ class LoginUserView(View):
                             "request a new one."
                         )
                     )
-                    self.template = loader.get_template('session_manager/default.html')
+                    self.template = loader.get_template('usermanager/default.html')
                     self.context.update({
                         'form': RegistrationLinkForm(initial={'email': user.email}),
                         'submit_text': 'Re-send Registration Link',
-                        'form_action': reverse('session_manager_send_registration_link'),
+                        'form_action': reverse('user_send_registration_link'),
                         'email': user.email,
                     })
                     return HttpResponse(self.template.render(self.context, request))
@@ -221,7 +221,7 @@ class LoginUserView(View):
             self.context.update({'login_stage': self.login_stage})
             form = LoginPasswordForm(request.POST)
             if form.is_valid():
-                user, error_reason = SessionManager.check_user_login(
+                user, error_reason = UserManager.check_user_login(
                     username_or_email=request.POST['email'],
                     password=request.POST['password']
                 )
@@ -245,7 +245,7 @@ class SendRegistrationLink(View):
         context = {}
         form = RegistrationLinkForm(request.POST)
         if form.is_valid():
-            user = SessionManager.get_user_by_username(request.POST['email'])
+            user = UserManager.get_user_by_username(request.POST['email'])
             UserToken.clean(
                 token_type='registration',
                 user=user
@@ -256,28 +256,28 @@ class SendRegistrationLink(View):
             )
             registration_token._generate_token()
             registration_token.save()
-            mailer = SessionManagerEmailer()
+            mailer = UserManagerEmailer()
             mailer.send_app_registration_link(user, registration_token)
             messages.success(
                 request,
                 'A registration link was sent to {}. Use the provided link to complete registration.'.format(registration_token.user.email)
             )
-            template = loader.get_template('session_manager/default.html')
+            template = loader.get_template('usermanager/default.html')
             if settings.PREVIEW_EMAILS_IN_APP:
                 context.update({'show_email': mailer})
             return HttpResponse(template.render(context, request))
         else:
             messages.error(request, 'Could not validate request.')
-            return redirect(reverse('session_manager_login'))
+            return redirect(reverse('user_login'))
 
 
 class SendPasswordResetLink(View):
     def post(self, request, *args, **kwargs):
-        template = loader.get_template('session_manager/default.html')
+        template = loader.get_template('usermanager/default.html')
         context = {}
         form = LoginEmailForm(request.POST)
         if form.is_valid():
-            user = SessionManager.get_user_by_username(request.POST['email'])
+            user = UserManager.get_user_by_username(request.POST['email'])
             UserToken.clean(
                 token_type='reset',
                 user=user
@@ -288,7 +288,7 @@ class SendPasswordResetLink(View):
             )
             reset_token._generate_token()
             reset_token.save()
-            mailer = SessionManagerEmailer()
+            mailer = UserManagerEmailer()
             mailer.send_password_reset_link(reset_token)
             messages.success(
                 request,
@@ -307,7 +307,7 @@ class ResetPasswordWithTokenView(View):
     """
     def setup(self, request, *args, **kwargs):
         super(ResetPasswordWithTokenView, self).setup(request, *args, **kwargs)
-        self.template = loader.get_template('session_manager/reset_password.html')
+        self.template = loader.get_template('usermanager/reset_password.html')
         self.context = {}
         # get the token and error message, needed for both GET and POST
         self.token, self.token_error_message = UserToken.get_token(
@@ -335,12 +335,12 @@ class ResetPasswordWithTokenView(View):
         if self.token:
             if self.token.is_valid:
                 if form.is_valid():
-                    user = SessionManager.get_user_by_id(request.POST['user_id'])
+                    user = UserManager.get_user_by_id(request.POST['user_id'])
                     user.set_password(request.POST['password'])
                     user.save()
                     messages.success(request, 'Password reset. Please log in to continue.')
                     self.token.delete()
-                    return redirect(reverse('session_manager_login'))
+                    return redirect(reverse('user_login'))
             else:
                 messages.error(request, 'Token is expired.')
         else:
@@ -354,10 +354,10 @@ class ResetPasswordFromProfileView(View):
     """
     def setup(self, request, *args, **kwargs):
         super(ResetPasswordFromProfileView, self).setup(request, *args, **kwargs)
-        self.template = loader.get_template('session_manager/reset_password.html')
+        self.template = loader.get_template('usermanager/reset_password.html')
         self.context = {
             'breadcrumbs': [
-                ('Profile', reverse('session_manager_profile')),
+                ('Profile', reverse('user_profile')),
                 ('Reset Password', None)
             ]
         }
@@ -384,12 +384,12 @@ class LogOutUserView(View):
         logout(request)
         messages.success(request, 'Logged out.')
         request.session['user_is_authenticated'] = False
-        return redirect(reverse('session_manager_login'))
+        return redirect(reverse('user_login'))
 
 
 class Profile(View):
     def get(self, request, *args, **kwargs):
-        template = loader.get_template('session_manager/profile.html')
+        template = loader.get_template('usermanager/profile.html')
         context = {
             'show_username': not settings.MAKE_USERNAME_EMAIL
         }
@@ -399,7 +399,7 @@ class Profile(View):
 class UpdateProfileView(View):
     def setup(self, request, *args, **kwargs):
         super(UpdateProfileView, self).setup(request, *args, **kwargs)
-        self.template = loader.get_template('session_manager/default.html')
+        self.template = loader.get_template('usermanager/default.html')
         if settings.MAKE_USERNAME_EMAIL:
             self.form = UserProfileEmailUsernameForm
         else:
@@ -437,7 +437,7 @@ class UpdateProfileView(View):
             user.last_name = request.POST['last_name']
             user.save()
             messages.success(request, 'Profile updated.')
-            return redirect(reverse('session_manager_profile'))
+            return redirect(reverse('user_profile'))
         else:
             context = {
                 'form': form,

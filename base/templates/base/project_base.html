@@ -25,22 +25,22 @@
 	{% block header_nav %}
 		<nav class="navbar navbar-expand-sm bg-light navbar-light">
 			<div class="container">
-				<a class="navbar-brand float-left" href="{% url 'session_manager_profile' %}">{{APP_NAME}}
+				<a class="navbar-brand float-left" href="{% url 'user_profile' %}">{{APP_NAME}}
 				</a>
 				<ul class="navbar-nav">
 					{% if request.user.is_authenticated %}
 						<li class="nav-item">
-							<a href="{% url 'session_manager_profile' %}" class="nav-link">Logged in as: {{request.user.username}}</a>
+							<a href="{% url 'user_profile' %}" class="nav-link">Logged in as: {{request.user.username}}</a>
 						</li>
 						<li class="nav-item">
-							<a class="nav-link" href="{% url 'session_manager_logout' %}">Log Out</a>
+							<a class="nav-link" href="{% url 'user_logout' %}">Log Out</a>
 						</li>
 					{% else %}
 						<li class="nav-item">
-							<a class="nav-link" href="{% url 'session_manager_register' %}">Register</a>
+							<a class="nav-link" href="{% url 'user_register' %}">Register</a>
 						</li>
 						<li class="nav-item">
-							<a class="nav-link" href="{% url 'session_manager_login' %}">Log In</a>
+							<a class="nav-link" href="{% url 'user_login' %}">Log In</a>
 						</li>
 					{% endif %}
 				</ul>
@@ -80,7 +80,7 @@
 			{% block page_content %}{% endblock %}
 			{% block email_preview %}
 				{% if show_email %}
-					{% include 'session_manager/emails/app_email_preview.html' with email=show_email %}
+					{% include 'usermanager/emails/app_email_preview.html' with email=show_email %}
 				{% endif %}
 			{% endblock %}
 		</div>

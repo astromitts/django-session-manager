@@ -12,13 +12,13 @@ import hashlib
 import random
 import string
 
-from session_manager.utils import TimeDiff
+from usermanager.utils import TimeDiff
 
 
-class SessionManager(models.Model):
+class UserManager(models.Model):
     """ Helper model for login, register and log out, etc functions
     """
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     registration_status = models.CharField(
         max_length=25,
         choices=[
@@ -203,11 +203,11 @@ class UserToken(models.Model):
         """ Get the URL path expected by the login and password reset views
         """
         if self.token_type == 'login':
-            return '{}?token={}&user={}'.format(reverse('session_manager_login'), self.token, self.user.username)
+            return '{}?token={}&user={}'.format(reverse('user_login'), self.token, self.user.username)
         elif self.token_type == 'registration':
-            return '{}?token={}&user={}'.format(reverse('session_manager_register'), self.token, self.user.username)
+            return '{}?token={}&user={}'.format(reverse('user_register'), self.token, self.user.username)
         else:
-            return '{}?token={}&user={}'.format(reverse('session_manager_token_reset_password'), self.token, self.user.username)
+            return '{}?token={}&user={}'.format(reverse('user_token_reset_password'), self.token, self.user.username)
 
     @property
     def link(self):
@@ -224,7 +224,7 @@ class UserToken(models.Model):
             Returns a tuple:
                 (object: UserToken if found, string: error message if no token found)
         """
-        user = SessionManager.get_user_by_username(username)
+        user = UserManager.get_user_by_username(username)
         if not user:
             return (None, 'User matching username not found.')
         token = cls.objects.filter(user=user, token=token, token_type=token_type).first()

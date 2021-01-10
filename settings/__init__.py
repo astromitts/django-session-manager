@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'session_manager',
+    'usermanager',
     'base',
 ]
 
@@ -49,7 +49,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'session_manager.middleware.session_request_validation',
+    'usermanager.middleware.session_request_validation',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
@@ -66,7 +66,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'session_manager.context_processors.session_manager_app_context'
+                'usermanager.context_processors.user_manager_app_context'
             ],
         },
     },
@@ -126,23 +126,23 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'base/static')
 
 # Session Manager Settings
-LOGIN_SUCCESS_REDIRECT = 'session_manager_profile'
-PW_RESET_SUCCESS_REDIRECT = 'session_manager_profile'
-DEFAULT_ERROR_TEMPLATE = 'session_manager/error.html'
+LOGIN_SUCCESS_REDIRECT = 'user_profile'
+PW_RESET_SUCCESS_REDIRECT = 'user_profile'
+DEFAULT_ERROR_TEMPLATE = 'usermanager/error.html'
 MAKE_USERNAME_EMAIL = False
 
 # Middleware authentication settings
 MIDDLEWARE_DEBUG = False
 AUTHENTICATION_EXEMPT_VIEWS = [
-    'session_manager_register',
-    'session_manager_login',
-    'session_manager_token_reset_password',
-    'session_manager_send_reset_password_link',
-    'session_manager_send_registration_link',
+    'user_register',
+    'user_login',
+    'user_token_reset_password',
+    'user_send_reset_password_link',
+    'user_send_registration_link',
     'eula',
     'privacy_policy',
 ]
-AUTHENTICATION_REQUIRED_REDIRECT = 'session_manager_login'
+AUTHENTICATION_REQUIRED_REDIRECT = 'user_login'
 
 # display settings
 APP_NAME = "Bo's Django Template"

@@ -12,9 +12,9 @@
 		<li><b>Email:</b> {{request.user.email}}</li>
 	</ul>
 
-	<div><a href="{% url 'session_manager_profile_update' %}">Update user profile</a></div>
-	<div><a href="{% url 'session_manager_profile_reset_password' %}">Reset password</a></div>
-	<div><a href="{% url 'session_manager_logout' %}">Log out</a></div>
+	<div><a href="{% url 'user_profile_update' %}">Update user profile</a></div>
+	<div><a href="{% url 'user_profile_reset_password' %}">Reset password</a></div>
+	<div><a href="{% url 'user_logout' %}">Log out</a></div>
 
 {% endblock %}
 

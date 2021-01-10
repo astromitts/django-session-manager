@@ -1,22 +1,22 @@
 from django.test import TestCase
 from django.urls import reverse
 from django.contrib.auth.models import User
-from session_manager.models import SessionManager, UserToken
-from session_manager.utils import TimeDiff
+from usermanager.models import UserManager, UserToken
+from usermanager.utils import TimeDiff
 
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 
 
-class SessionManagerTestCase(TestCase):
-    """ Base class for SessionManager Test Cases
+class UserManagerTestCase(TestCase):
+    """ Base class for UserManager Test Cases
     """
 
     def setUp(self, *args, **kwargs):
-        super(SessionManagerTestCase, self).setUp(*args, **kwargs)
-        self.register_url = reverse('session_manager_register')
-        self.login_url = reverse('session_manager_login')
-        self.password_reset_url = reverse('session_manager_profile_reset_password')
+        super(UserManagerTestCase, self).setUp(*args, **kwargs)
+        self.register_url = reverse('user_register')
+        self.login_url = reverse('user_login')
+        self.password_reset_url = reverse('user_profile_reset_password')
 
     def assertMessageInContext(self, request, message_text):
         """ Helper function to raise an assertion error if an expected message
@@ -53,7 +53,7 @@ class SessionManagerTestCase(TestCase):
         return self.client.post(self.login_url, post_data, follow=follow)
 
 
-class MiddlewareTestCase(SessionManagerTestCase):
+class MiddlewareTestCase(UserManagerTestCase):
     def test_middleware_404(self):
         with self.settings(MIDDLEWARE_DEBUG=False):
             bad_url = '/asdf/'
@@ -68,7 +68,7 @@ class MiddlewareTestCase(SessionManagerTestCase):
 
     def test_middleware_authentication_required(self):
         with self.settings(MIDDLEWARE_DEBUG=False):
-            profile_url = reverse('session_manager_profile')
+            profile_url = reverse('user_profile')
             result_request = self.client.get(profile_url, follow=True)
             self.assertMessageInContext(
                 result_request,
@@ -83,7 +83,7 @@ class MiddlewareTestCase(SessionManagerTestCase):
         }
         user = self._create_user(**user_data)
         self._login_user(user_data)
-        profile_url = reverse('session_manager_profile')
+        profile_url = reverse('user_profile')
         with self.settings(MIDDLEWARE_DEBUG=False):
             result_request = self.client.get(profile_url, follow=True)
             self.assertEqual(
@@ -93,7 +93,7 @@ class MiddlewareTestCase(SessionManagerTestCase):
             self.assertEqual(result_request.status_code, 200)
 
 
-class TestRegistrationFlow(SessionManagerTestCase):
+class TestRegistrationFlow(UserManagerTestCase):
     """ Test cases for form based registration
     """
     def test_register_user_happy_path_no_username(self):
@@ -120,12 +120,12 @@ class TestRegistrationFlow(SessionManagerTestCase):
             self.assertMessageInContext(register_page_1, 'Thanks! To verify your email address, we have sent you a link to complete your registration.')
 
             new_user = User.objects.get(email=post_data_page_2['email'])
-            session_manager_user = SessionManager.objects.get(user=new_user)
+            session_manager_user = UserManager.objects.get(user=new_user)
             self.assertEqual(session_manager_user.registration_status, 'pre-registered')
 
             register_page_2 = self.client.post(self.register_url, post_data_page_2, follow=True)
             new_user = User.objects.get(email=post_data_page_2['email'])
-            session_manager_user = SessionManager.objects.get(user=new_user)
+            session_manager_user = UserManager.objects.get(user=new_user)
             self.assertMessageInContext(register_page_2, 'Registration complete! Please log in to continue.')
             self.assertEqual(new_user.username, post_data_page_2['email'])
             self.assertTrue(new_user.check_password(post_data_page_2['password']))
@@ -287,7 +287,7 @@ class TestRegistrationFlow(SessionManagerTestCase):
                 self.assertNonFieldFormError(register_post, expected_error)
 
 
-class TestLoginFlow(SessionManagerTestCase):
+class TestLoginFlow(UserManagerTestCase):
     """ Test cases for form based log in
     """
     def test_login_happy_path(self):
@@ -329,7 +329,7 @@ class TestLoginFlow(SessionManagerTestCase):
         self.assertMessageInContext(login_request, 'Password incorrect.')
 
 
-class TestResetPasswordFromProfile(SessionManagerTestCase):
+class TestResetPasswordFromProfile(UserManagerTestCase):
     """ Test cases for resetting password from user profile when logged in
     """
     def test_password_reset(self):
@@ -355,7 +355,7 @@ class TestResetPasswordFromProfile(SessionManagerTestCase):
         self.assertMessageInContext(reset_request, 'Your password has been reset. Please log in again to continue.')
 
 
-class TestTokenLogin(SessionManagerTestCase):
+class TestTokenLogin(UserManagerTestCase):
     """ Test cases for token based log in
     """
     def test_login_with_token_happy_path(self):
@@ -416,7 +416,7 @@ class TestTokenLogin(SessionManagerTestCase):
         self.assertMessageInContext(login_request, 'Token is expired.')
 
 
-class TestTokenPasswordReset(SessionManagerTestCase):
+class TestTokenPasswordReset(UserManagerTestCase):
     """ Test cases for token based password reset
     """
     def test_password_reset_happy_path(self):
