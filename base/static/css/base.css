@@ -1,4 +1,41 @@
 /* Bootstrap overrides */
+.bg-light {
+  background-color: #f8f9fa !important;
+}
+
+.navbar {
+  padding-bottom: 1rem;
+}
+
+.navbar-brand {
+  font-size: 2rem;
+  color: #3E3E3E !important;
+}
+
+.nav-link {
+  color: #3E3E3E !important;
+}
+.nav-link:hover {
+  text-decoration: underline;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  border-color: #007bff;
+}
+.btn-primary:hover {
+  /*background-color: $secondary-blue;
+  border-color: $secondary-blue;*/
+}
+.btn-danger {
+  /*background-color: $primary-red;
+  border-color: $secondary-red;*/
+}
+.btn-danger:hover {
+  /*background-color: $secondary-red;
+  border-color: $secondary-red;*/
+}
+
 ol.breadcrumb {
   background-color: #FFFFFF;
 }
@@ -23,6 +60,21 @@ span.helptext_required {
 }
 
 /* Session manager base styles */
+.footer {
+  bottom: 0;
+  position: absolute;
+  left: 0;
+  margin-top: 5rem;
+  width: 100%;
+  background-color: #f8f9fa;
+  color: #3E3E3E !important;
+  padding: 2rem 0;
+}
+.footer a {
+  color: #3E3E3E !important;
+  text-decoration: underline;
+}
+
 .as-table {
   display: table;
   width: 100%;

@@ -1,4 +1,51 @@
+$text-color-primary: #462202;
+$navbar-bg-color: #f8f9fa;
+
+$primary-blue: #007bff;
+$secondary-blue: #007bff;
+
+$primary-red: #DC4D5B;
+$secondary-red: #CC0C1E;
+
+$dark-gray: #898989;
+$light-gray: #C5C5C5;
+$text-color-primary: #3E3E3E;
+
 /* Bootstrap overrides */
+.bg-light {
+	background-color: $navbar-bg-color !important;
+}
+.navbar {
+	padding-bottom: 1rem;
+}
+.navbar-brand {
+	font-size: 2rem;
+	color: $text-color-primary !important;
+}
+.nav-link {
+	color: $text-color-primary !important;
+	&:hover {
+		text-decoration: underline;
+	}
+}
+.btn {
+	&-primary {
+		background-color: $primary-blue;
+		border-color: $secondary-blue;
+		&:hover {
+			/*background-color: $secondary-blue;
+			border-color: $secondary-blue;*/
+		}
+	}
+	&-danger {
+		/*background-color: $primary-red;
+		border-color: $secondary-red;*/
+		&:hover {
+			/*background-color: $secondary-red;
+			border-color: $secondary-red;*/
+		}
+	}
+}
 
 ol.breadcrumb {
 	background-color: #FFFFFF;
@@ -27,6 +74,20 @@ span.helptext{
 
 
 /* Session manager base styles */
+.footer {
+	bottom: 0;
+	position: absolute;
+	left: 0;
+	margin-top: 5rem;
+	width: 100%;
+	background-color: $navbar-bg-color;
+	color: $text-color-primary !important;
+	padding: 2rem 0;
+	a {
+		color: $text-color-primary !important;
+		text-decoration: underline;
+	}
+}
 
 .as-table {
 	display: table;
