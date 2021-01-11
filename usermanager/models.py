@@ -5,7 +5,7 @@ from django.db.models import Q
 
 from django.urls import reverse
 
-from datetime import datetime, timedelta
+from datetime import datetime
 import pytz
 
 import hashlib
@@ -16,8 +16,6 @@ from usermanager.utils import TimeDiff
 
 
 class UserManager(models.Model):
-    """ Helper model for login, register and log out, etc functions
-    """
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     registration_status = models.CharField(
         max_length=25,
@@ -49,21 +47,18 @@ class UserManager(models.Model):
 
     @classmethod
     def user_exists(cls, email):
-        """ Return True/False if User with given email exists
-        """
+        """ Return True/False if User with given email exists. """
         user_qs = cls.objects.filter(email=email)
         return user_qs.exists()
 
     @classmethod
     def get_user_by_username(cls, username):
-        """ Retrieve User if one with a matching username exists
-        """
+        """ Retrieve User if one with a matching username exists. """
         return User.objects.filter(username__iexact=username).first()
 
     @classmethod
     def get_user_by_username_or_email(cls, username_or_email):
-        """ Retrieve User if one with a matching username exists
-        """
+        """ Retrieve User if one with a matching username exists. """
         if '@' in username_or_email:
             user = User.objects.filter(email__iexact=username_or_email).first()
         else:
@@ -72,14 +67,12 @@ class UserManager(models.Model):
 
     @classmethod
     def search(cls, email):
-        """ Retrieve User if one with a matching email exists
-        """
+        """ Retrieve User if one with a matching email exists. """
         return User.objects.filter(email__icontains=email).all()
 
     @classmethod
     def full_search(cls, search_term):
-        """ Retrieve User if one with a matching username exists
-        """
+        """ Retrieve User if one with a matching username exists. """
         filter_qs = User.objects
         if '@' in search_term:
             filter_qs = filter_qs.filter(email__icontains=search_term)
@@ -88,26 +81,24 @@ class UserManager(models.Model):
             first_name = search_names[0]
             last_name = ' '.join(search_names[1:])
             filter_qs = filter_qs.filter(
-                Q(first_name__icontains=first_name)|
+                Q(first_name__icontains=first_name) |
                 Q(last_name__icontains=last_name)
             )
         else:
             filter_qs = filter_qs.filter(
-                Q(first_name__icontains=search_term)|
+                Q(first_name__icontains=search_term) |
                 Q(last_name__icontains=search_term)
             )
         return filter_qs.all()
 
     @classmethod
     def get_user_by_id(cls, pk):
-        """ Get the User of given primary key
-        """
+        """ Get the User of given primary key. """
         return User.objects.get(pk=pk)
 
     @classmethod
-    def register_user(cls, user, first_name=' ', last_name=' ', password=None,  username=None):
-        """ Create a new User instance, set the password and return the User object
-        """
+    def register_user(cls, user, first_name=' ', last_name=' ', password=None, username=None):
+        """ Create a new User instance, set the password and return the User object. """
         if not username:
             user.username = user.email
         else:
@@ -124,8 +115,7 @@ class UserManager(models.Model):
 
     @classmethod
     def preregister_user(cls, email):
-        """ Create a new User instance, set the password and return the User object
-        """
+        """ Create a new User instance, set the password and return the User object. """
         new_user = User(
             email=email,
             username=email
@@ -137,7 +127,8 @@ class UserManager(models.Model):
 
     @classmethod
     def check_user_login(cls, username_or_email, password):
-        """ Checks password for given email and password combination if the email has a User
+        """ Check password for given email and password combination if the email has a User.
+
             Returns tuple
                 (
                     object: User if it is found and the password is correct,
@@ -186,7 +177,7 @@ class UserToken(models.Model):
         token_base = '{}-{}-{}'.format(
             self.user.email,
             datetime.now(),
-            ''.join(random.choices(string.ascii_uppercase + string.digits, k = 60))
+            ''.join(random.choices(string.ascii_uppercase + string.digits, k=60))
         )
         token_hash = hashlib.sha256(token_base.encode())
         return token_hash.hexdigest()
@@ -216,7 +207,12 @@ class UserToken(models.Model):
         return '{}{}'.format(settings.HOST, self.path)
 
     def __str__(self):
-        return 'UserToken Object: {} // User: {} // type: {} // expires: {}'.format(self.pk, self.user.email, self.token_type, self.expiration)
+        return 'UserToken Object: {} // User: {} // type: {} // expires: {}'.format(
+            self.pk,
+            self.user.email,
+            self.token_type,
+            self.expiration
+        )
 
     @classmethod
     def get_token(cls, token, username, token_type):
@@ -237,7 +233,7 @@ class UserToken(models.Model):
     def is_valid(self):
         """ Returns True if the token is not expired, else returns False
         """
-        utc=pytz.UTC
+        utc = pytz.UTC
         if self.expiration >= utc.localize(datetime.now()):
             return True
         else:

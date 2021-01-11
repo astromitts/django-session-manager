@@ -62,7 +62,7 @@ span.helptext_required {
 /* Session manager base styles */
 .footer {
   bottom: 0;
-  position: absolute;
+  position: relative;
   left: 0;
   margin-top: 5rem;
   width: 100%;

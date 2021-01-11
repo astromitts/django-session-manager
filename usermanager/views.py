@@ -1,16 +1,13 @@
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import login, logout, REDIRECT_FIELD_NAME
-from django.contrib.auth.views import redirect_to_login
+from django.contrib.auth import login, logout
 from django.contrib.auth.models import User
-from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
-from django.shortcuts import render, redirect, resolve_url
+from django.shortcuts import redirect
 from django.template import loader
 from django.views import View
 from django.urls import reverse
 
-from urllib.parse import urlparse
 
 from usermanager.forms import (
     CreateUserForm,
@@ -84,9 +81,9 @@ class CreateUserView(View):
 
     def post(self, request, *args, **kwargs):
         if 'password' in request.POST:
-            form = CreateUserForm(request.POST)
+            user = UserManager.get_user_by_username(request.POST['email'])
+            form = CreateUserForm(user, request.POST)
             if form.is_valid():
-                user = UserManager.get_user_by_username(request.POST['email'])
                 if not settings.MAKE_USERNAME_EMAIL:
                     username = request.POST['username']
                 else:
@@ -128,7 +125,10 @@ class CreateUserView(View):
                     mailer.send_app_registration_link(user, token)
                     if settings.PREVIEW_EMAILS_IN_APP:
                         self.context.update({'show_email': mailer})
-                    messages.success(request, 'Thanks! To verify your email address, we have sent you a link to complete your registration.')
+                    messages.success(
+                        request,
+                        'Thanks! To verify your email address, we have sent you a link to complete your registration.'
+                    )
                     return HttpResponse(self.template.render(self.context, request))
             self.context.update({
                 'form': form,
@@ -150,7 +150,11 @@ class LoginUserView(View):
         # check if a login token was provided
         self.context.update({'login_stage': self.login_stage})
         if request.GET.get('token') and request.GET.get('user'):
-            token, token_error_message = UserToken.get_token(token=request.GET['token'], username=request.GET['user'], token_type='login')
+            token, token_error_message = UserToken.get_token(
+                token=request.GET['token'],
+                username=request.GET['user'],
+                token_type='login'
+            )
             if token:
                 if token.is_valid:
                     # a valid token/user combination was given, so log in and delete the token
@@ -260,7 +264,9 @@ class SendRegistrationLink(View):
             mailer.send_app_registration_link(user, registration_token)
             messages.success(
                 request,
-                'A registration link was sent to {}. Use the provided link to complete registration.'.format(registration_token.user.email)
+                'A registration link was sent to {}. Use the provided link to complete registration.'.format(
+                    registration_token.user.email
+                )
             )
             template = loader.get_template('usermanager/default.html')
             if settings.PREVIEW_EMAILS_IN_APP:

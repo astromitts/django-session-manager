@@ -15,8 +15,23 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils.safestring import mark_safe
 
-from usermanager.models import UserManager
 from usermanager.utils import special_chars
+
+
+def _eula_check():
+    return BooleanField(
+        widget=CheckboxInput(),
+        label=mark_safe(
+            'I have read and agree to the <a href="/end-user-license-agreement/">user license agreement</a>'
+        )
+    )
+
+
+def _privacy_check():
+    return BooleanField(
+        widget=CheckboxInput(),
+        label=mark_safe('I have read and agree to the <a href="/privacy-policy/">privacy policy</a>')
+    )
 
 
 def validate_unique_email(email, user_pk):
@@ -98,11 +113,14 @@ def validate_password(clean_password, confirm_password):
 
 class CreateUserForm(ModelForm):
     confirm_password = CharField(widget=PasswordInput(attrs={'class': 'form-control'}))
+    privacy_check = _privacy_check()
+    eula_check = _eula_check()
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, user=None, *args, **kwargs):
         super(CreateUserForm, self).__init__(*args, **kwargs)
         # self.fields['username'].help_text = 'Minimum 3 characters. Letters, numbers, and underscores only.'
-        self.fields['password'].help_text = 'Minimum 8 characters. Must contain at least 1 letter, 1 number and 1 special character.'
+        self.fields['password'].help_text = 'Minimum 8 characters. Must contain at least 1 letter, 1 number and 1 special character.'  # noqa
+        self.user = user
 
     class Meta:
         model = User
@@ -159,6 +177,7 @@ class CreateUserForm(ModelForm):
 class ResetPasswordForm(ModelForm):
     user_id = CharField(widget=HiddenInput())
     confirm_password = CharField(widget=PasswordInput(attrs={'class': 'form-control'}))
+
     class Meta:
         model = User
         fields = ['password', 'confirm_password', 'user_id']
@@ -170,7 +189,6 @@ class ResetPasswordForm(ModelForm):
     def clean(self):
         super(ResetPasswordForm, self).clean()
         data = self.cleaned_data
-        user = User.objects.get(pk=data['user_id'])
         errors = []
         clean_password = self.cleaned_data['password']
         confirm_password = self.cleaned_data['confirm_password']
@@ -183,7 +201,9 @@ class ResetPasswordForm(ModelForm):
 
         return data
 
+
 class LoginEmailForm(ModelForm):
+
     class Meta:
         model = User
         fields = ['email']
@@ -191,15 +211,10 @@ class LoginEmailForm(ModelForm):
             'email': TextInput(attrs={'class': 'form-control'})
         }
 
+
 class PreRegisterEmailForm(ModelForm):
-    eula_check = BooleanField(
-        widget=CheckboxInput(),
-        label=mark_safe('I have read and agree to the <a href="/end-user-license-agreement/">user license agreement</a>')
-    )
-    privacy_check = BooleanField(
-        widget=CheckboxInput(),
-        label=mark_safe('I have read and agree to the <a href="/privacy-policy/">privacy policy</a>')
-    )
+    eula_check = _eula_check()
+    privacy_check = _privacy_check()
 
     class Meta:
         model = User
@@ -259,6 +274,7 @@ class UserProfileUsernameForm(UserProfileForm):
     username = CharField(widget=TextInput(attrs={'class': 'form-control'}))
     first_name = CharField(widget=TextInput(attrs={'class': 'form-control'}))
     last_name = CharField(widget=TextInput(attrs={'class': 'form-control'}))
+
 
 class UserProfileEmailUsernameForm(UserProfileForm):
     user_id = CharField(widget=HiddenInput())

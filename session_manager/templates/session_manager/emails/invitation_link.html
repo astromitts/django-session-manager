@@ -1,0 +1,7 @@
+{% extends 'session_manager/emails/email_base.html' %}
+
+{% block email_body %}
+	<p>You have been invited to join {{app_name}} by {{inviter_name}}!</p>
+	<p>You can use this link to register. It expires in 48 hours.</p>
+	<a href="{{token.link}}"><button>Complete registration</button></a>
+{% endblock %}
