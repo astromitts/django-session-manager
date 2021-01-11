@@ -39,6 +39,13 @@ class UserManager(models.Model):
     privacy_policy_version = models.CharField(max_length=100, blank=True, null=True)
     privacy_policy_timestamp = models.DateTimeField(blank=True, null=True)
 
+    def __str__(self):
+        return 'UserManager for: {}'.format(self.user.email)
+
+    @property
+    def email(self):
+        return self.user.email
+
     @classmethod
     def post_process_registration(cls, user):
         instance = cls.objects.get(user=user)
