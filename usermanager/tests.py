@@ -5,7 +5,6 @@ from usermanager.models import UserManager, UserToken
 from usermanager.utils import TimeDiff
 
 from bs4 import BeautifulSoup
-from datetime import datetime, timedelta
 
 
 class UserManagerTestCase(TestCase):
@@ -18,14 +17,14 @@ class UserManagerTestCase(TestCase):
         self.login_url = reverse('user_login')
         self.password_reset_url = reverse('user_profile_reset_password')
 
-    def assertMessageInContext(self, request, message_text):
+    def assertMessageInContext(self, request, message_text):  # noqa
         """ Helper function to raise an assertion error if an expected message
             is absent from request context
         """
         messages = [msg.message for msg in request.context['messages']._loaded_messages]
         self.assertIn(message_text, messages)
 
-    def assertNonFieldFormError(self, request, message_text):
+    def assertNonFieldFormError(self, request, message_text):  # noqa
         """ Helper function to raise an assertion error if an expected message
             is absent from the rendered request HTML
         """
@@ -38,9 +37,9 @@ class UserManagerTestCase(TestCase):
         """
         user = User(email=username_or_email)
         if username:
-            user.username=username
+            user.username = username
         else:
-            user.username=username_or_email
+            user.username = username_or_email
         user.save()
         if password:
             user.set_password(password)
@@ -81,7 +80,6 @@ class MiddlewareTestCase(UserManagerTestCase):
             'username': 'tester',
             'password': 't3st3r@dmin'
         }
-        user = self._create_user(**user_data)
         self._login_user(user_data)
         profile_url = reverse('user_profile')
         with self.settings(MIDDLEWARE_DEBUG=False):
@@ -106,6 +104,8 @@ class TestRegistrationFlow(UserManagerTestCase):
 
             post_data_page_1 = {
                 'email': 'test@example.com',
+                'eula_check': 'on',
+                'privacy_check': 'on'
             }
             post_data_page_2 = {
                 'email': 'test@example.com',
@@ -114,10 +114,15 @@ class TestRegistrationFlow(UserManagerTestCase):
                 'last_name': 'Morin',
                 'password': 't3st3r@dmin',
                 'confirm_password': 't3st3r@dmin',
+                'eula_check': 'on',
+                'privacy_check': 'on'
             }
 
             register_page_1 = self.client.post(self.register_url, post_data_page_1, follow=True)
-            self.assertMessageInContext(register_page_1, 'Thanks! To verify your email address, we have sent you a link to complete your registration.')
+            self.assertMessageInContext(
+                register_page_1,
+                'Thanks! To verify your email address, we have sent you a link to complete your registration.'
+            )
 
             new_user = User.objects.get(email=post_data_page_2['email'])
             session_manager_user = UserManager.objects.get(user=new_user)
@@ -131,7 +136,6 @@ class TestRegistrationFlow(UserManagerTestCase):
             self.assertTrue(new_user.check_password(post_data_page_2['password']))
             self.assertEqual(session_manager_user.registration_status, 'complete')
 
-
     def test_register_user_happy_path_with_username(self):
         """ Verify a user can register when they provide all the correct data with settings.MAKE_USERNAME_EMAIL = False
         """
@@ -142,6 +146,8 @@ class TestRegistrationFlow(UserManagerTestCase):
 
             post_data_page_1 = {
                 'email': 'test@example.com',
+                'eula_check': 'on',
+                'privacy_check': 'on'
             }
             post_data_page_2 = {
                 'email': 'test@example.com',
@@ -150,10 +156,15 @@ class TestRegistrationFlow(UserManagerTestCase):
                 'last_name': 'Morin',
                 'password': 't3st3r@dmin',
                 'confirm_password': 't3st3r@dmin',
+                'eula_check': 'on',
+                'privacy_check': 'on'
             }
 
             register_page_1 = self.client.post(self.register_url, post_data_page_1, follow=True)
-            self.assertMessageInContext(register_page_1, 'Thanks! To verify your email address, we have sent you a link to complete your registration.')
+            self.assertMessageInContext(
+                register_page_1,
+                'Thanks! To verify your email address, we have sent you a link to complete your registration.'
+            )
 
             register_page_2 = self.client.post(self.register_url, post_data_page_2, follow=True)
             self.assertMessageInContext(register_page_2, 'Registration complete! Please log in to continue.')
@@ -174,10 +185,15 @@ class TestRegistrationFlow(UserManagerTestCase):
 
         post_data = {
             'email': existing_user_data['username_or_email'],
+            'privacy_check': 'on',
+            'eula_check': 'on'
         }
 
         register_post = self.client.post(self.register_url, post_data)
-        self.assertMessageInContext(register_post, 'Invalid email: <ul><li>Email address already in use by another account.</li></ul><p>Did you mean to <a href="/login/">log in instead</a>?')
+        self.assertMessageInContext(
+            register_post,
+            'Invalid email: <ul><li>Email address already in use by another account.</li></ul><p>Did you mean to <a href="/login/">log in instead</a>?'  # noqa
+        )
 
     def test_password_requirements(self):
         """ Verify the correct registration error message when a username already exists
@@ -478,7 +494,11 @@ class TestTokenPasswordReset(UserManagerTestCase):
             'user_id': user.pk,
             'password': 't3st3r@dminnewpass',
         }
-        reset_request = self.client.get(user_token.path.replace(user_token.user.username, 'asdf'), post_data, follow=True)
+        reset_request = self.client.get(
+            user_token.path.replace(user_token.user.username, 'asdf'),
+            post_data,
+            follow=True
+        )
         self.assertMessageInContext(reset_request, 'User matching username not found.')
 
     def test_password_reset_expired(self):

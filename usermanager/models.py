@@ -34,10 +34,10 @@ class UserManager(models.Model):
         ],
         default='website'
     )
-    eula_version = models.CharField(max_length=100, default=settings.CURRENT_EULA_VERSION)
-    eula_timestamp = models.DateTimeField(default=datetime.now)
-    privacy_policy_version = models.CharField(max_length=100, default=settings.CURRENT_PRIVACY_POLICY_VERSION)
-    privacy_policy_timestamp = models.DateTimeField(default=datetime.now)
+    eula_version = models.CharField(max_length=100, blank=True, null=True)
+    eula_timestamp = models.DateTimeField(blank=True, null=True)
+    privacy_policy_version = models.CharField(max_length=100, blank=True, null=True)
+    privacy_policy_timestamp = models.DateTimeField(blank=True, null=True)
 
     @classmethod
     def post_process_registration(cls, user):
@@ -97,7 +97,15 @@ class UserManager(models.Model):
         return User.objects.get(pk=pk)
 
     @classmethod
-    def register_user(cls, user, first_name=' ', last_name=' ', password=None, username=None):
+    def register_user(
+            cls,
+            user,
+            first_name=' ',
+            last_name=' ',
+            password=None,
+            username=None,
+            pp_timestamp=None,
+            eula_timestamp=None):
         """ Create a new User instance, set the password and return the User object. """
         if not username:
             user.username = user.email
@@ -110,18 +118,33 @@ class UserManager(models.Model):
         if password:
             user.set_password(password)
             user.save()
+        user.usermanager.privacy_policy_timestamp = pp_timestamp
+        user.usermanager.eula_timestamp = eula_timestamp
+        if not user.usermanager.eula_version:
+            user.usermanager.eula_version = settings.CURRENT_EULA_VERSION
+
+        if not user.usermanager.privacy_policy_version:
+            user.usermanager.privacy_policy_version = settings.CURRENT_PRIVACY_POLICY_VERSION
+
+        user.usermanager.save()
         cls.post_process_registration(user)
         return user
 
     @classmethod
-    def preregister_user(cls, email):
+    def preregister_user(cls, email, pp_timestamp, eula_timestamp):
         """ Create a new User instance, set the password and return the User object. """
         new_user = User(
             email=email,
-            username=email
+            username=email,
         )
         new_user.save()
-        new_session_manager_instance = cls(user=new_user)
+        new_session_manager_instance = cls(
+            user=new_user,
+            privacy_policy_timestamp=pp_timestamp,
+            eula_timestamp=eula_timestamp,
+            privacy_policy_version=settings.CURRENT_PRIVACY_POLICY_VERSION,
+            eula_version=settings.CURRENT_EULA_VERSION,
+        )
         new_session_manager_instance.save()
         return new_user
 

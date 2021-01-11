@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login, logout
@@ -71,7 +73,7 @@ class CreateUserView(View):
                     initial = {
                         'email': registration_token.user.email,
                     }
-                form = CreateUserForm(initial=initial)
+                form = CreateUserForm(initial=initial, user=registration_token.user)
         else:
             form = PreRegisterEmailForm()
         self.context.update({
@@ -88,12 +90,25 @@ class CreateUserView(View):
                     username = request.POST['username']
                 else:
                     username = request.POST['email']
+
+                if not user.usermanager.eula_timestamp:
+                    eula_timestamp = datetime.now()
+                else:
+                    eula_timestamp = user.usermanager.eula_timestamp
+
+                if not user.usermanager.privacy_policy_timestamp:
+                    pp_timestamp = datetime.now()
+                else:
+                    pp_timestamp = user.usermanager.privacy_policy_timestamp
+
                 UserManager.register_user(
                     user,
                     username=username,
                     password=request.POST['password'],
                     first_name=request.POST['first_name'],
-                    last_name=request.POST['last_name']
+                    last_name=request.POST['last_name'],
+                    pp_timestamp=pp_timestamp,
+                    eula_timestamp=eula_timestamp
                 )
                 messages.success(request, 'Registration complete! Please log in to continue.')
                 UserToken.objects.filter(user=user, token_type='registration').all().delete()
@@ -104,7 +119,7 @@ class CreateUserView(View):
                 })
                 return HttpResponse(self.template.render(self.context, request))
         else:
-            form = LoginEmailForm(request.POST)
+            form = PreRegisterEmailForm(request.POST)
             if form.is_valid():
                 email_error = validate_email(request.POST['email'], 0)
                 if email_error:
@@ -115,7 +130,11 @@ class CreateUserView(View):
                 else:
                     user = UserManager.get_user_by_username(request.POST['email'])
                     if not user:
-                        user = UserManager.preregister_user(request.POST['email'])
+                        user = UserManager.preregister_user(
+                            request.POST['email'],
+                            pp_timestamp=datetime.now(),
+                            eula_timestamp=datetime.now()
+                        )
 
                     UserToken.clean(user=user, token_type='registration')
                     token = UserToken(user=user, token_type='registration')
@@ -125,6 +144,7 @@ class CreateUserView(View):
                     mailer.send_app_registration_link(user, token)
                     if settings.PREVIEW_EMAILS_IN_APP:
                         self.context.update({'show_email': mailer})
+
                     messages.success(
                         request,
                         'Thanks! To verify your email address, we have sent you a link to complete your registration.'

@@ -121,6 +121,16 @@ class CreateUserForm(ModelForm):
         # self.fields['username'].help_text = 'Minimum 3 characters. Letters, numbers, and underscores only.'
         self.fields['password'].help_text = 'Minimum 8 characters. Must contain at least 1 letter, 1 number and 1 special character.'  # noqa
         self.user = user
+        if user:
+            if user.usermanager.eula_timestamp:
+                self.fields['eula_check'].widget = HiddenInput(
+                    attrs={'value': user.usermanager.eula_timestamp}
+                )
+
+            if user.usermanager.privacy_policy_timestamp:
+                self.fields['privacy_check'].widget = HiddenInput(
+                    attrs={'value': user.usermanager.privacy_policy_timestamp}
+                )
 
     class Meta:
         model = User
@@ -131,6 +141,8 @@ class CreateUserForm(ModelForm):
                 'last_name',
                 'password',
                 'confirm_password',
+                'eula_check',
+                'privacy_check',
             ]
         else:
             fields = [
@@ -140,6 +152,8 @@ class CreateUserForm(ModelForm):
                 'last_name',
                 'password',
                 'confirm_password',
+                'eula_check',
+                'privacy_check',
             ]
 
         widgets = {
