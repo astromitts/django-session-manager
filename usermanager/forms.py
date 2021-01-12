@@ -238,6 +238,15 @@ class PreRegisterEmailForm(ModelForm):
         }
 
 
+class UpdateEulaPPForm(ModelForm):
+    eula_check = _eula_check()
+    privacy_check = _privacy_check()
+
+    class Meta:
+        model = User
+        fields = ['eula_check', 'privacy_check']
+
+
 class LoginPasswordForm(ModelForm):
     class Meta:
         model = User

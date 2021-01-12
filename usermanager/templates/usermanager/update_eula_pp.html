@@ -1,0 +1,13 @@
+{% extends 'base/project_base.html' %}
+{% block page_content %}
+	<div class="row">
+		<div class="col">
+			<div class="alert alert-info">
+				<p>There has been an update to our <a href="{% url 'privacy_policy' %}">Privacy Policy</a> and/or <a href="{% url 'eula' %}">End User License Agreement</a>.</p>
+
+				<p>You must indicate that you have read them and agree to them before you can continue</p>.
+			</div>
+		</div>
+	</div>
+	{% include 'usermanager/generic_form.html' with form=form submit_text='Agree and continue' %}
+{% endblock %}

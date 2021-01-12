@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import path
 
-from usermanager.views import *
+from usermanager.views import *  # noqa
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -16,4 +16,5 @@ urlpatterns = [
     path('profile/', Profile.as_view(), name='user_profile'),
     path('end-user-license-agreement/', Eula.as_view(), name='eula'),
     path('privacy-policy/', PrivacyPolicy.as_view(), name='privacy_policy'),
+    path('profile/eula-privacy-version/', UpdateEulaPPView.as_view(), name='user_update_eula_pp'),
 ]

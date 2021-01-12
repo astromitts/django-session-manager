@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.contrib import messages
-from django.core.exceptions import ValidationError
 from django.shortcuts import render, redirect
 from django.urls import resolve, reverse
 from django.urls.exceptions import Resolver404
@@ -17,16 +16,20 @@ def session_request_validation(get_response):
         error_message = None
         status_code = 200
 
-        # middleware does not have access to the user
-        # session_manager_login is expected to set a session variable to use here
-        user_is_authenticated = request.session.get('user_is_authenticated')
+        user_is_authenticated = request.user.is_authenticated
 
         try:
             resolved_url = resolve(request.path)
+            if user_is_authenticated and resolved_url.url_name != settings.EULA_PP_UPDATE_VIEW:
+                um = request.user.usermanager
+                if (um.eula_version != settings.CURRENT_EULA_VERSION or
+                        um.privacy_policy_version != settings.CURRENT_PRIVACY_POLICY_VERSION):
+                    return redirect(reverse(settings.EULA_PP_UPDATE_VIEW))
+
             is_login_page = resolved_url.url_name == settings.AUTHENTICATION_REQUIRED_REDIRECT
             if is_login_page and user_is_authenticated:
                 return redirect(reverse(settings.LOGIN_SUCCESS_REDIRECT))
-            if not resolved_url.url_name in settings.AUTHENTICATION_EXEMPT_VIEWS:
+            if resolved_url.url_name not in settings.AUTHENTICATION_EXEMPT_VIEWS:
                 if not user_is_authenticated:
                     request.session['login_redirect_from'] = request.path
                     messages.error(

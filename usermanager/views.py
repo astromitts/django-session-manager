@@ -18,6 +18,7 @@ from usermanager.forms import (
     PreRegisterEmailForm,
     RegistrationLinkForm,
     ResetPasswordForm,
+    UpdateEulaPPForm,
     UserProfileUsernameForm,
     UserProfileEmailUsernameForm,
     validate_email,
@@ -39,6 +40,30 @@ class PrivacyPolicy(View):
         template = loader.get_template('usermanager/{}.html'.format(settings.CURRENT_PRIVACY_POLICY_VERSION))
         context = {}
         return HttpResponse(template.render(context, request))
+
+
+class UpdateEulaPPView(View):
+    def setup(self, request, *args, **kwargs):
+        super(UpdateEulaPPView, self).setup(request, *args, **kwargs)
+        self.form = UpdateEulaPPForm
+        self.template = loader.get_template('usermanager/update_eula_pp.html')
+
+    def get(self, request, *args, **kwargs):
+        context = {'form': self.form()}
+        return HttpResponse(self.template.render(context, request))
+
+    def post(self, request, *args, **kwargs):
+        form = self.form(request.POST)
+        if form.is_valid():
+            um = request.user.usermanager
+            um.privacy_policy_timestamp = datetime.now()
+            um.privacy_policy_version = settings.CURRENT_PRIVACY_POLICY_VERSION
+            um.eula_timestamp = datetime.now()
+            um.eula_version = settings.CURRENT_EULA_VERSION
+            um.save()
+            return redirect(settings.LOGIN_SUCCESS_REDIRECT)
+        context = {'form': form}
+        return HttpResponse(self.template.render(context, request))
 
 
 class CreateUserView(View):

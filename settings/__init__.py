@@ -143,6 +143,7 @@ AUTHENTICATION_EXEMPT_VIEWS = [
     'privacy_policy',
 ]
 AUTHENTICATION_REQUIRED_REDIRECT = 'user_login'
+EULA_PP_UPDATE_VIEW = 'user_update_eula_pp'
 
 # display settings
 APP_NAME = "Bo's Django Template"
